@@ -39,3 +39,5 @@ config/*_local.gin
 model/
 predicted/
 preprocessed/
+
+play.py

@@ -1,0 +1,38 @@
+import soccer_robot_perception.datasets.detection_dataset
+import soccer_robot_perception.datasets.segmentation_dataset
+import soccer_robot_perception.data_loader.data_loader
+import soccer_robot_perception.transforms.transforms
+
+INPUT_HEIGHT = 100
+INPUT_WIDTH = 100
+
+# Data transformation configuration
+TRANSFORM_CONFIGURATION = {
+'0': {'transform_type': 'Resize', 'params': {'output_size': [%INPUT_HEIGHT, %INPUT_WIDTH]}},
+#'1': {'transform_type': 'NormalizeImage', 'params': {'mean' :[128, 128, 128], 'stddev': [128, 128, 128]}}
+}
+configure_transforms.config = %TRANSFORM_CONFIGURATION
+
+DetectionDataset.root_dir = '/Users/deepan/Documents/CudaVision/data_sample/blob/'
+DetectionDataset.transform = @configure_transforms()
+
+SegmentationDataset.root_dir = '/Users/deepan/Documents/CudaVision/data_sample/segmentation/'
+SegmentationDataset.transform = @configure_transforms()
+
+DETECTION_DATASET = @DetectionDataset()
+SEGMENTATION_DATASET = @SegmentationDataset()
+
+torch.utils.data.ConcatDataset.datasets = [%DETECTION_DATASET, %SEGMENTATION_DATASET]
+get_train_valid_test_loader.dataset = @torch.utils.data.ConcatDataset()
+#get_train_valid_test_loader.dataset = %SEGMENTATION_DATASET
+get_train_valid_test_loader.collate_fn=@custom_collate_alldata
+get_train_valid_test_loader.batch_size = 4
+get_train_valid_test_loader.random_seed = 39248
+get_train_valid_test_loader.valid_size = 0.2
+get_train_valid_test_loader.test_size = 0.0
+get_train_valid_test_loader.num_workers = 0
+
+
+DATA_LOADERS = @get_train_valid_test_loader()
+
+train_model.data_loaders = %DATA_LOADERS

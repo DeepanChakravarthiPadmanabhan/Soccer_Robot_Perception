@@ -22,6 +22,7 @@ dependencies = [
     "gin-config==0.3.0",
     "torchsummary>=1.5.1",
     "xlsxwriter>=1.2.9",
+    "black",
 ]
 
 setup(

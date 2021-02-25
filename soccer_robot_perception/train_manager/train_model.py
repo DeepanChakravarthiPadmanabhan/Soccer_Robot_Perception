@@ -14,9 +14,9 @@ LOGGER = logging.getLogger(__name__)
 def train_model(
     tensorboard_dir: str,
     model_output_dir: str,
-    input_height: int,
-    input_width: int,
-    net: torch.nn.Module,
+    # input_height: int,
+    # input_width: int,
+    # net: torch.nn.Module,
     data_loaders: typing.Tuple[
         torch.utils.data.DataLoader,
         torch.utils.data.DataLoader,
@@ -34,24 +34,32 @@ def train_model(
 
     train_loader, valid_loader, test_loader = data_loaders
 
-    net.apply(net.init_weights)
-    net.to(device)
-    summary(
-        net,
-        input_size=(3, input_height, input_width),
-        batch_size=train_loader.batch_size,
-        device=device.type,
-    )
+    # CHECK DATALOADERS
+    for batch, data in enumerate(train_loader):
+        print(data["image"].shape)
+        print(len(data["gt_mask"]))
+        print(len(data["gt_boxcord"]))
+        print(len(data["class"]))
 
-    trainer = Trainer(
-        net=net,
-        train_loader=train_loader,
-        valid_loader=valid_loader,
-        device=device,
-        summary_writer=tensorboard_writer,
-        model_output_path=model_output_dir,
-    )
-
-    trainer.train()
-    # Task completion information
-    LOGGER.info("Train script completed")
+    # TODO: Uncomment below part once Architecture is written
+    # net.apply(net.init_weights)
+    # net.to(device)
+    # summary(
+    #     net,
+    #     input_size=(3, input_height, input_width),
+    #     batch_size=train_loader.batch_size,
+    #     device=device.type,
+    # )
+    #
+    # trainer = Trainer(
+    #     net=net,
+    #     train_loader=train_loader,
+    #     valid_loader=valid_loader,
+    #     device=device,
+    #     summary_writer=tensorboard_writer,
+    #     model_output_path=model_output_dir,
+    # )
+    #
+    # trainer.train()
+    # # Task completion information
+    # LOGGER.info("Train script completed")
