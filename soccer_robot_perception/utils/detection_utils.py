@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+from soccer_robot_perception.utils.constants import CLASS_MAPPING_DETECTION
 
 
 def read_xml_file(xml_file: str):
@@ -11,7 +12,7 @@ def read_xml_file(xml_file: str):
 
     for boxes in root.iter("object"):
         filename = root.find("filename").text
-        class_list.append(boxes.find("name").text)
+        class_list.append(CLASS_MAPPING_DETECTION[boxes.find("name").text])
         ymin = int(boxes.find("bndbox/ymin").text)
         xmin = int(boxes.find("bndbox/xmin").text)
         ymax = int(boxes.find("bndbox/ymax").text)

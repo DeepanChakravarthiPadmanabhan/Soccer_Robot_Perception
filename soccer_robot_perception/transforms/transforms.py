@@ -107,7 +107,7 @@ class ToTensor(object):
 
     def det_label_preprocessor(self, image, bb, class_name):
 
-        label_mask = np.ones(image.permute(1, 2, 0).shape)
+        label_mask = np.ones(image.shape)
         for box, name in zip(bb, class_name):
 
             if name == 'ball':
@@ -141,10 +141,6 @@ class ToTensor(object):
 
     def __call__(self, sample: typing.Dict) -> typing.Dict:
 
-        image = sample["image"]
-        image = torch.from_numpy(image).float()
-        image = image.permute(2, 0, 1)
-        sample["image"] = image
 
         if "seg_mask" in sample.keys():
             seg_mask = self.seg_label_preprocessor(sample["seg_mask"])
@@ -155,6 +151,13 @@ class ToTensor(object):
 
             sample["det_boxcord"] = torch.tensor(sample["det_boxcord"], dtype=torch.float)
             sample["det_mask"] = torch.tensor(det_mask, dtype=torch.float)
+
+            sample["det_class"] = torch.tensor(sample["det_class"], dtype=torch.int)
+
+        image = sample["image"]
+        image = torch.from_numpy(image).float()
+        image = image.permute(2, 0, 1)
+        sample["image"] = image
 
         return sample
 
