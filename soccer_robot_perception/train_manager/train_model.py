@@ -36,10 +36,12 @@ def train_model(
 
     # CHECK DATALOADERS
     for batch, data in enumerate(train_loader):
-        print(data["image"].shape)
-        print(len(data["gt_mask"]))
-        print(len(data["gt_boxcord"]))
-        print(len(data["class"]))
+        print("IN TRAIN")
+        # print(data["image"].shape)
+        # print(len(data["det_mask"]))
+        # print(len(data["det_boxcord"]))
+        # print(len(data["det_class"]))
+        # print(len(data["seg_mask"]))
 
     # TODO: Uncomment below part once Architecture is written
     # net.apply(net.init_weights)

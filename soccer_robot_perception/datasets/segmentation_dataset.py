@@ -79,8 +79,9 @@ class SegmentationDataset(Dataset):
         label = cv2.imread(self.all_labels[idx])
 
         sample = {
+            "dataset_class": "segmentation",
             "image": image,
-            "gt_mask": label,
+            "seg_mask": label,
         }
 
         if self.transform:

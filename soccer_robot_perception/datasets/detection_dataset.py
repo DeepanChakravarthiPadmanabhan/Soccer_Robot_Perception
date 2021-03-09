@@ -76,9 +76,10 @@ class DetectionDataset(Dataset):
         name, bb_list = read_xml_file(self.all_labels[idx])
 
         sample = {
+            "dataset_class": "detection",
             "image": image,
-            "gt_boxcord": bb_list,
-            "class": name,
+            "det_boxcord": bb_list,
+            "det_class": name,
         }
 
         if self.transform:

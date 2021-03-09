@@ -45,9 +45,9 @@ def custom_collate_detection(
 
     bb_list = []
     for element in batch:
-        bb_list.append(element.pop("gt_boxcord"))
+        bb_list.append(element.pop("det_boxcord"))
     batch = default_collate(batch)
-    batch["gt_boxcord"] = bb_list
+    batch["det_boxcord"] = bb_list
     return batch
 
 
@@ -70,23 +70,29 @@ def custom_collate_alldata(
     box_coordinates_list = []
     class_list = []
     mask_list = []
+    det_mask_list = []
 
     for element in batch:
         # Clean Detection Dataset
-        if "gt_boxcord" in element.keys():
-            box_coordinates_list.append(element.pop("gt_boxcord"))
-            class_list.append(element.pop("class"))
+        if "det_mask" in element.keys():
+            box_coordinates_list.append(element.pop("det_boxcord"))
+            class_list.append(element.pop("det_class"))
+            det_mask_list.append(element.pop("det_mask"))
             mask_list.append([])
 
         # Clean Segmentation Dataset
-        if "gt_mask" in element.keys():
+        if "seg_mask" in element.keys():
             box_coordinates_list.append([])
             class_list.append([])
-            mask_list.append(element.pop("gt_mask"))
+            det_mask_list.append([])
+            mask_list.append(element.pop("seg_mask"))
 
     batch = default_collate(batch)
-    batch["gt_boxcord"] = box_coordinates_list
-    batch["gt_mask"] = mask_list
-    batch["class"] = class_list
+    batch["det_boxcord"] = box_coordinates_list
+    batch["det_mask"] = det_mask_list
+    batch["det_class"] = class_list
+    batch["seg_mask"] = mask_list
+
+
 
     return batch

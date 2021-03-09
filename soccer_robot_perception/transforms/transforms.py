@@ -4,6 +4,7 @@ import gin
 import torch
 import torchvision
 import cv2
+import matplotlib.pyplot as plt
 
 
 def get_transform(transform_type: str, params: typing.Dict):
@@ -54,18 +55,18 @@ class Resize(object):
         new_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
         sample["image"] = new_image
 
-        if "gt_mask" in sample.keys():
-            mask = sample["gt_mask"]
+        if "det_mask" in sample.keys():
+            mask = sample["det_mask"]
             new_mask = cv2.resize(mask, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
-            sample["gt_mask"] = new_mask
+            sample["det_mask"] = new_mask
 
         width_factor = new_w / old_w
         height_factor = new_h / old_h
 
-        if "gt_boxcord" in sample.keys():
+        if "det_boxcord" in sample.keys():
             # Resize the bounding box coordinates for the image
             new_bounding_box = []
-            for box in sample["gt_boxcord"]:
+            for box in sample["det_boxcord"]:
                 x_min, y_min, x_max, y_max = box
                 x_min = int(np.round(x_min * width_factor))
                 y_min = int(np.round(y_min * height_factor))
@@ -73,7 +74,7 @@ class Resize(object):
                 y_max = int(np.round(y_max * height_factor))
                 new_box = [x_min, y_min, x_max, y_max]
                 new_bounding_box.append(new_box)
-            sample["gt_boxcord"] = new_bounding_box
+            sample["det_boxcord"] = new_bounding_box
 
         return sample
 
@@ -103,6 +104,41 @@ class NormalizeImage(object):
 
 
 class ToTensor(object):
+
+    def det_label_preprocessor(self, image, bb, class_name):
+
+        label_mask = np.ones(image.permute(1, 2, 0).shape)
+        for box, name in zip(bb, class_name):
+
+            if name == 'ball':
+                point_x = (box[0] + box[2]) / 2
+                point_y = (box[1] + box[3]) / 2
+                point = (int(point_x), int(point_y))
+                label_mask = cv2.circle(label_mask, point, 4, (1, 0, 0), -1, lineType=cv2.LINE_AA)
+
+            elif name == 'robot':
+                point_x = (box[0] + box[2]) / 2
+                point_y = (box[3])
+                point = (int(point_x), int(point_y))
+                label_mask = cv2.circle(label_mask, point, 4, (0, 2, 0), -1, lineType=cv2.LINE_AA)
+
+            elif name == 'goalpost':
+                point_x = (box[0] + box[2]) / 2
+                point_y = (box[3])
+                point = (int(point_x), int(point_y))
+                label_mask = cv2.circle(label_mask, point, 4, (0, 0, 3), -1, lineType=cv2.LINE_AA)
+
+        return label_mask
+
+    def seg_label_preprocessor(self, label_mask):
+
+        label_mask = torch.sum(torch.tensor(label_mask, dtype=torch.float), dim=2)
+        label_mask[label_mask == 0] = 0 # Background
+        label_mask[label_mask == 128.] = 1 # Field
+        label_mask[label_mask == 256.] = 2 # Lines
+
+        return label_mask
+
     def __call__(self, sample: typing.Dict) -> typing.Dict:
 
         image = sample["image"]
@@ -110,11 +146,15 @@ class ToTensor(object):
         image = image.permute(2, 0, 1)
         sample["image"] = image
 
-        if "gt_mask" in sample.keys():
-            sample["gt_mask"] = torch.tensor(sample["gt_mask"], dtype=torch.float)
+        if "seg_mask" in sample.keys():
+            seg_mask = self.seg_label_preprocessor(sample["seg_mask"])
+            sample["seg_mask"] = seg_mask
 
-        if "gt_boxcord" in sample.keys():
-            sample["gt_boxcord"] = torch.tensor(sample["gt_boxcord"], dtype=torch.float)
+        if "det_boxcord" in sample.keys():
+            det_mask = self.det_label_preprocessor(sample["image"], sample["det_boxcord"], sample["det_class"])
+
+            sample["det_boxcord"] = torch.tensor(sample["det_boxcord"], dtype=torch.float)
+            sample["det_mask"] = torch.tensor(det_mask, dtype=torch.float)
 
         return sample
 
