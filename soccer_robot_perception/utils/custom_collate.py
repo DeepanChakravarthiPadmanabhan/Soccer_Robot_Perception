@@ -70,29 +70,28 @@ def custom_collate_alldata(
     box_coordinates_list = []
     class_list = []
     mask_list = []
-    det_mask_list = []
+    seg_mask_list = []
 
     for element in batch:
         # Clean Detection Dataset
-        if "det_mask" in element.keys():
+
+        if element["dataset_class"] == 'detection':
             box_coordinates_list.append(element.pop("det_boxcord"))
             class_list.append(element.pop("det_class"))
-            det_mask_list.append(element.pop("det_mask"))
-            mask_list.append([])
+
+            seg_mask_list.append([])
+
 
         # Clean Segmentation Dataset
-        if "seg_mask" in element.keys():
+        if element["dataset_class"] == 'segmentation':
             box_coordinates_list.append([])
             class_list.append([])
-            det_mask_list.append([])
-            mask_list.append(element.pop("seg_mask"))
+
+            seg_mask_list.append(element.pop("seg_mask"))
 
     batch = default_collate(batch)
     batch["det_boxcord"] = box_coordinates_list
-    batch["det_mask"] = det_mask_list
     batch["det_class"] = class_list
-    batch["seg_mask"] = mask_list
-
-
+    batch["seg_mask"] = seg_mask_list
 
     return batch

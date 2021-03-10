@@ -6,16 +6,21 @@ from torchvision import models
 
 from torchsummary import summary
 
+from soccer_robot_perception.architectures.location_aware_conv2d import LocationAwareConv2d
+
 
 @gin.configurable
 class NimbRoNet2(nn.Module):
-    def __init__(self):
-        super(NimbRoNet2, self).__init__()
+    def __init__(self, input_width, input_height, location_awareness):
+        super().__init__()
         res18_model = models.resnet18(pretrained=True)
         for param in res18_model.parameters():
             param.requires_grad = False
 
         self.relu = nn.ReLU()
+        location_bias = torch.nn.Parameter(torch.zeros(int(input_width / 4), int(input_height / 4), 3))
+        location_encoder = torch.autograd.Variable(torch.ones(int(input_width / 4), int(input_height / 4), 3))
+
 
         # TODO: Find how to apply weights for the new layers
         self.block_1 = nn.Sequential(
@@ -58,10 +63,29 @@ class NimbRoNet2(nn.Module):
             256, 128, 2, 2
         )  # applies transpose convolution to block_3, block_4 and block_5 output
 
-        self.detection_head = nn.Conv2d(128, 3, 1, 1)
-        self.segmentation_head = nn.Conv2d(128, 3, 1, 1)
+        if location_awareness:
+            self.detection_head = LocationAwareConv2d(gradient=False,
+                                                      w=int(input_width / 4),
+                                                      h=int(input_height / 4),
+                                                      location_bias=location_bias,
+                                                      location_encoder=location_encoder,
+                                                      in_channels=128,
+                                                      out_channels=3,
+                                                      kernel_size=1,
+                                                      )
+            self.segmentation_head = LocationAwareConv2d(gradient=False,
+                                                         w=int(input_width / 4),
+                                                         h=int(input_height / 4),
+                                                         location_bias=location_bias,
+                                                         location_encoder=location_encoder,
+                                                         in_channels=128,
+                                                         out_channels=3,
+                                                         kernel_size=1,
+                                                         )
+        else:
+            self.detection_head = nn.Conv2d(128, 3, 1, 1)
+            self.segmentation_head = nn.Conv2d(128, 3, 1, 1)
 
-        # TODO: Define location dependent bias and add them in forward
 
     def forward(self, x):
         block_1_out = self.block_1(x)
@@ -96,18 +120,3 @@ class NimbRoNet2(nn.Module):
         segmentation_out = self.segmentation_head(bn_af_block_2_out)
 
         return detection_out, segmentation_out
-
-
-def check_model():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print("Device", device.type)
-    net = NimbRoNet2()
-    net.to(device)
-    summary(
-        net,
-        input_size=(3, 224, 224),
-        batch_size=2,
-        device=device.type,
-    )
-
-check_model()
