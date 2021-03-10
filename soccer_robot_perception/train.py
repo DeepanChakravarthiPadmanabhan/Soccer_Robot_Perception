@@ -16,7 +16,7 @@ def _register_configurables():
     gin.external_configurable(torch.optim.Adadelta, module="torch.optim")
     # Loss functions
     gin.external_configurable(torch.nn.CrossEntropyLoss, module="torch.nn")
-    gin.external_configurable(torch.nn.SmoothL1Loss, module="torch.nn")
+    gin.external_configurable(torch.nn.MSELoss, module="torch.nn")
     # Dataset
     gin.external_configurable(torch.utils.data.ConcatDataset, module="torch.utils.data")
 

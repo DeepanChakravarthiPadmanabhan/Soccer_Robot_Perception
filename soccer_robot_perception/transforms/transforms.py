@@ -121,7 +121,7 @@ class ToTensor(object):
             det_mask = det_label_preprocessor(bb=sample["det_boxcord"], class_name=sample["det_class"])
 
             sample["det_boxcord"] = torch.tensor(sample["det_boxcord"], dtype=torch.float)
-            sample["target"] = torch.tensor(det_mask, dtype=torch.float)
+            sample["target"] = det_mask
 
             sample["det_class"] = torch.tensor(sample["det_class"], dtype=torch.int)
 

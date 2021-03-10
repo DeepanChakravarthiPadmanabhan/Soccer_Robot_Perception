@@ -99,20 +99,20 @@ class NimbRoNet2(nn.Module):
             extractor_af_block_5
         )
 
-        concat_af_block_4_out = torch.cat(
-            (extractor_af_block_5, self.connector_af_block_4(block_4_out))
+        concat_af_block_4_out = torch.add(
+            extractor_af_block_5, self.connector_af_block_4(block_4_out)
         )
         bn_af_block_4_out = self.bn_af_block_4(self.relu(concat_af_block_4_out))
         ct_af_block_4_out = self.transpose_convolution_block_256_256(bn_af_block_4_out)
 
-        concat_af_block_3_out = torch.cat(
-            (ct_af_block_4_out, self.connector_af_block_3(block_3_out))
+        concat_af_block_3_out = torch.add(
+            ct_af_block_4_out, self.connector_af_block_3(block_3_out)
         )
         bn_af_block_3_out = self.bn_af_block_3(self.relu(concat_af_block_3_out))
         ct_af_block_3_out = self.transpose_convolution_block_256_128(bn_af_block_3_out)
 
-        concat_af_block_2_out = torch.cat(
-            (ct_af_block_3_out, self.connector_af_block_2(block_2_out))
+        concat_af_block_2_out = torch.add(
+            ct_af_block_3_out, self.connector_af_block_2(block_2_out)
         )
         bn_af_block_2_out = self.bn_af_block_2(self.relu(concat_af_block_2_out))
 

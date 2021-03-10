@@ -57,6 +57,7 @@ class Trainer:
         self.device = device
         self.input_height = input_height
         self.input_width = input_width
+        self.loss_scale = 1.0
 
     def _sample_to_device(self, sample):
         device_sample = {}
@@ -94,9 +95,10 @@ class Trainer:
 
         for epoch in range(self.num_epochs):
             start = time.time()
+            self.net.train(True)
+
             self.current_epoch = epoch + 1
             sample_size = 10
-            self.net.train(True)
 
             running_loss = 0.0
             av_loss = 0.0
@@ -104,24 +106,173 @@ class Trainer:
             running_regression_loss = 0.0
 
             for batch, data in enumerate(self.train_loader):
-                LOGGER.info("Training: batch %d of epoch %d", batch + 1, epoch + 1)
+                LOGGER.info("TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
                 data = self._sample_to_device(data)
 
                 input_image = data["image"]
                 self.optimizer.zero_grad()
-
                 det_out, seg_out = self.net(input_image)
-                print('Output shapes: ', det_out.shape, seg_out.shape)
+
+                det_out_collected = []
+                det_target_collected = []
+                seg_out_collected = []
+                seg_target_collected = []
 
                 # To calculate loss for each data
-                # for n,i in enumerate(data["dataset_class"]):
-                #     if i == 'detection':
-                #         det_target = data["target"][n]
-                #         # loss =
-                #     else:
-                #         seg_target = data["target"][n]
-                #         loss = self.seg_criterion(seg_out, seg_target)
-                #         print(loss)
+                for n, i in enumerate(data["dataset_class"]):
+                    if i == 'detection':
+                        det_target_collected.append(data["target"][n].unsqueeze_(0))
+                        det_out_collected.append(det_out[n].unsqueeze_(0))
+                    else:
+                        seg_target_collected.append(torch.argmax(data["target"][n], dim=0).unsqueeze_(0))
+                        seg_out_collected.append(seg_out[n].unsqueeze_(0))
+
+                if len(seg_target_collected) != 0:
+                    seg_target_tensor = torch.cat(seg_target_collected, dim=0)
+                    seg_out_tensor = torch.cat(seg_out_collected, dim=0)
+                    seg_loss = self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
+                else:
+                    seg_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True, device=self.device)
+
+                if len(det_target_collected) != 0:
+                    det_target_tensor = torch.cat(det_target_collected, dim=0)
+                    det_out_tensor = torch.cat(det_out_collected, dim=0)
+                    det_loss = self.det_criterion(det_out_tensor, det_target_tensor)
+                else:
+                    det_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True, device=self.device)
+
+                loss = seg_loss + det_loss
+                LOGGER.info(
+                    "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                    self.current_epoch,
+                    batch + 1,
+                    loss.item(),
+                    seg_loss.item(),
+                    det_loss.item(),
+                )
+
+                loss.backward()
+
+                self.optimizer.step()
+
+                av_loss += loss.item() / self.loss_scale
+                running_loss += loss.item() / self.loss_scale
+                running_segment_loss += seg_loss.item() / self.loss_scale
+                running_regression_loss += det_loss.item() / self.loss_scale
+
+                if batch % sample_size == (sample_size - 1):
+                    LOGGER.info(
+                        "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                        self.current_epoch,
+                        batch + 1,
+                        running_loss / sample_size,
+                        running_segment_loss / sample_size,
+                        running_regression_loss / sample_size,
+                        )
+                    running_loss = 0.0
+
+            if self.scheduler:
+                self.scheduler.step()
+
+            # output training loss
+            av_train_loss = av_loss / train_len
+
+            LOGGER.info(
+                "TRAIN: epoch: %d, average loss: %f",
+                epoch + 1,
+                av_train_loss,
+            )
+
+            av_valid_loss = self.validation()
+
+            LOGGER.info(
+                "VALIDATION: epoch: %d, average validation loss: %f",
+                epoch + 1,
+                av_valid_loss,
+            )
+
+            LOGGER.info("Current epoch completed in %f s", time.time() - start)
+
+            if av_valid_loss < best_validation_loss and model_path and best_model_path:
+                best_validation_loss = av_valid_loss
+                best_model_path = model_path
+                LOGGER.info(
+                    "Better model found. Saving. Epoch %d, Path %s",
+                    epoch + 1,
+                    best_model_path,
+                )
+                torch.save(self.net.state_dict(), best_model_path)
+                patience_count = self.patience
+            else:
+                patience_count -= 1
+                LOGGER.info(
+                    "No better model found. Epoch %d, Patience left %d",
+                    epoch + 1,
+                    patience_count,
+                )
+
+            if patience_count == 0:
+                LOGGER.info(
+                    "Epoch %d Patience is 0. Early stopping triggered", epoch + 1
+                )
+                break
+
+        toc = timeit.default_timer()
+        LOGGER.info("Finished training in %f s", toc - tic)
+
+    def validation(self):
+        LOGGER.info("Validation Module")
+        valid_len = len(self.valid_loader.batch_sampler)
+
+        self.net.train(False)
+
+        av_loss = 0.0
+
+        for batch, data in enumerate(self.valid_loader):
+            data = self._sample_to_device(data)
+            input_image = data["image"]
+            det_out, seg_out = self.net(input_image)
+
+            det_out_collected = []
+            det_target_collected = []
+            seg_out_collected = []
+            seg_target_collected = []
+
+            # To calculate loss for each data
+            for n, i in enumerate(data["dataset_class"]):
+                if i == 'detection':
+                    det_target_collected.append(data["target"][n].unsqueeze_(0))
+                    det_out_collected.append(det_out[n].unsqueeze_(0))
+                else:
+                    seg_target_collected.append(torch.argmax(data["target"][n], dim=0).unsqueeze_(0))
+                    seg_out_collected.append(seg_out[n].unsqueeze_(0))
+
+            if len(seg_target_collected) != 0:
+                seg_target_tensor = torch.cat(seg_target_collected, dim=0)
+                seg_out_tensor = torch.cat(seg_out_collected, dim=0)
+                seg_loss = self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
+            else:
+                seg_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True, device=self.device)
+
+            if len(det_target_collected) != 0:
+                det_target_tensor = torch.cat(det_target_collected, dim=0)
+                det_out_tensor = torch.cat(det_out_collected, dim=0)
+                det_loss = self.det_criterion(det_out_tensor, det_target_tensor)
+            else:
+                det_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True, device=self.device)
+
+            loss = seg_loss + det_loss
+            LOGGER.info(
+                "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                self.current_epoch,
+                batch + 1,
+                loss.item(),
+                seg_loss.item(),
+                det_loss.item(),
+            )
+            av_loss += loss.item() / self.loss_scale
+
+        av_valid_loss = av_loss / valid_len
+        return av_valid_loss
 
 
-            break

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import gin
+import torch
 
 import xml.etree.ElementTree as ET
 from soccer_robot_perception.utils.constants import CLASS_MAPPING_DETECTION
@@ -71,5 +72,8 @@ def det_label_preprocessor(input_width,
         plt.subplot(122)
         plt.imshow(label_mask_shrinked)
         plt.show()
+
+    label_mask_shrinked = torch.tensor(label_mask_shrinked, dtype=torch.float)
+    label_mask_shrinked = label_mask_shrinked.permute(2, 0, 1)
 
     return label_mask_shrinked
