@@ -75,5 +75,5 @@ evaluate_model.seg_criterion = @torch.nn.CrossEntropyLoss()
 
 evaluate_model.det_criterion = @torch.nn.MSELoss()
 
-evaluate_model.visualize = True
+evaluate_model.visualize = False
 evaluate_model.data_loaders = %DATA_LOADERS

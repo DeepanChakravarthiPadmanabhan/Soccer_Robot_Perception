@@ -104,6 +104,18 @@ def evaluate_model(
         input_image = data["image"]
         det_out, seg_out = net(input_image)
 
+        if visualize:
+            plt.subplot(131)
+            plt.imshow(input_image[0].permute(1, 2, 0).detach().numpy())
+            plt.title('Input')
+            plt.subplot(132)
+            plt.imshow(det_out[0].permute(1, 2, 0).detach().numpy())
+            plt.title('Blob')
+            plt.subplot(133)
+            plt.imshow(seg_out[0].permute(1, 2, 0).detach().numpy())
+            plt.title('Mask')
+            plt.show()
+
         det_out_collected = []
         det_target_collected = []
         seg_out_collected = []

@@ -114,3 +114,21 @@ def calculate_weight(
         excel_writer.save()
 
     return segmentation_class_weights
+
+def total_variation_loss(img: torch.tensor,
+                         weight: int=1):
+    bs, num_channels, height, width = img.shape
+    tv_h = ((img[:,:,1:,:] - img[:,:,:-1,:]).pow(2)).sum()
+    tv_w = ((img[:,:,:,1:] - img[:,:,:,:-1]).pow(2)).sum()
+    tv_loss = weight * (tv_h + tv_w) / (bs * num_channels * height * width)
+    return tv_loss
+
+def compute_total_variation_loss(img):
+    img_bg = img[:, 0, :, : ]
+    img_bg.unsqueeze_(1)
+    img_field = img[:, 1, :, :]
+    img_field.unsqueeze_(1)
+    tv_bg = total_variation_loss(img_bg)
+    tv_field = total_variation_loss(img_field)
+    tv_loss = tv_bg + tv_field
+    return tv_loss

@@ -3,14 +3,14 @@ Project work for "Lab: CudaVision - Learning Vision Systems on Graphics Cards" (
 
 Installation:
 
-pip install -e .
+`pip install -e . `
 
 Train:
 
-python soccer_robot_perception/train.py -c config/train.gin
+`python soccer_robot_perception/train.py -c config/train.gin`
 
-Evaluation:*
+Evaluation:
 
-python soccer_robot_perception/evaluate/evaluate.py -c config/evaluate.gin
+`python soccer_robot_perception/evaluate/evaluate.py -c config/evaluate.gin --model-path model/model.pth`
 
 \* - Under development phase

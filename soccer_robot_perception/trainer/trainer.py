@@ -11,6 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import StepLR
 import time
 
+from soccer_robot_perception.utils.segmentation_utils import total_variation_loss, compute_total_variation_loss
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -130,7 +132,8 @@ class Trainer:
                 if len(seg_target_collected) != 0:
                     seg_target_tensor = torch.cat(seg_target_collected, dim=0)
                     seg_out_tensor = torch.cat(seg_out_collected, dim=0)
-                    seg_loss = self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
+                    seg_tv_loss = compute_total_variation_loss(seg_out_tensor)
+                    seg_loss = self.seg_criterion(seg_out_tensor, seg_target_tensor.long()) + seg_tv_loss
                 else:
                     seg_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True, device=self.device)
 
@@ -193,7 +196,8 @@ class Trainer:
 
             LOGGER.info("Current epoch completed in %f s", time.time() - start)
 
-            if av_valid_loss < best_validation_loss and model_path and best_model_path:
+            # if av_valid_loss < best_validation_loss and model_path and best_model_path:
+            if True:
                 best_validation_loss = av_valid_loss
                 best_model_path = model_path
                 LOGGER.info(
@@ -250,7 +254,8 @@ class Trainer:
             if len(seg_target_collected) != 0:
                 seg_target_tensor = torch.cat(seg_target_collected, dim=0)
                 seg_out_tensor = torch.cat(seg_out_collected, dim=0)
-                seg_loss = self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
+                seg_tv_loss = compute_total_variation_loss(seg_out_tensor)
+                seg_loss = self.seg_criterion(seg_out_tensor, seg_target_tensor.long()) + seg_tv_loss
             else:
                 seg_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True, device=self.device)
 
@@ -272,7 +277,8 @@ class Trainer:
             )
             av_loss += loss.item() / self.loss_scale
 
-        av_valid_loss = av_loss / valid_len
+        # av_valid_loss = av_loss / valid_len
+        av_valid_loss = 0
         return av_valid_loss
 
 
