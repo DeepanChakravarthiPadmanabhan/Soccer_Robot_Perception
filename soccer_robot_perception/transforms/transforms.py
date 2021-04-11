@@ -58,12 +58,12 @@ class Resize(object):
         new_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
         sample["image"] = new_image
 
-        if "seg_mask" in sample.keys():
-            mask = sample["seg_mask"]
+        if "seg_target" in sample.keys():
+            mask = sample["seg_target"]
             new_mask = cv2.resize(
                 mask, (int(new_w / 4), int(new_h / 4)), interpolation=cv2.INTER_NEAREST
             )
-            sample["seg_mask"] = new_mask
+            sample["seg_target"] = new_mask
 
         width_factor = new_w / old_w
         height_factor = new_h / old_h
@@ -111,9 +111,9 @@ class NormalizeImage(object):
 class ToTensor(object):
     def __call__(self, sample: typing.Dict) -> typing.Dict:
 
-        if "seg_mask" in sample.keys():
-            seg_mask = seg_label_preprocessor(sample["seg_mask"])
-            sample["target"] = seg_mask
+        if "seg_target" in sample.keys():
+            seg_target = seg_label_preprocessor(sample["seg_target"])
+            sample["seg_target"] = seg_target
 
         if "det_boxcord" in sample.keys():
             det_mask, blob_centers = det_label_preprocessor(
@@ -123,7 +123,7 @@ class ToTensor(object):
             sample["det_boxcord"] = torch.tensor(
                 sample["det_boxcord"], dtype=torch.float
             )
-            sample["target"] = det_mask
+            sample["det_target"] = det_mask
             sample["blob_centers"] = torch.tensor(blob_centers, dtype=torch.float)
 
             sample["det_class"] = torch.tensor(sample["det_class"], dtype=torch.int)

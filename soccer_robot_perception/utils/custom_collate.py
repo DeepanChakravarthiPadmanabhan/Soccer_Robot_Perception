@@ -46,14 +46,17 @@ def custom_collate_detection(
     box_coordinates_list = []
     class_list = []
     blob_centers_list = []
+
     for element in batch:
         box_coordinates_list.append(element.pop("det_boxcord"))
         class_list.append(element.pop("det_class"))
         blob_centers_list.append(element.pop("blob_centers"))
+
     batch = default_collate(batch)
     batch["det_boxcord"] = box_coordinates_list
     batch["det_class"] = class_list
     batch["blob_centers"] = blob_centers_list
+
     return batch
 
 
@@ -76,8 +79,8 @@ def custom_collate_alldata(
     box_coordinates_list = []
     class_list = []
     blob_centers_list = []
-    mask_list = []
-    seg_mask_list = []
+    det_target_list = []
+    seg_target_list = []
 
     for element in batch:
         # Clean Detection Dataset
@@ -86,20 +89,23 @@ def custom_collate_alldata(
             box_coordinates_list.append(element.pop("det_boxcord"))
             class_list.append(element.pop("det_class"))
             blob_centers_list.append(element.pop("blob_centers"))
-            seg_mask_list.append([])
+            det_target_list.append(element.pop("det_target"))
+            seg_target_list.append([])
 
         # Clean Segmentation Dataset
         if element["dataset_class"] == "segmentation":
             box_coordinates_list.append([])
             class_list.append([])
             blob_centers_list.append([])
+            det_target_list.append([])
 
-            seg_mask_list.append(element.pop("seg_mask"))
+            seg_target_list.append(element.pop("seg_target"))
 
     batch = default_collate(batch)
     batch["det_boxcord"] = box_coordinates_list
     batch["det_class"] = class_list
     batch["blob_centers"] = blob_centers_list
-    batch["seg_mask"] = seg_mask_list
+    batch["det_target"] = det_target_list
+    batch["seg_target"] = seg_target_list
 
     return batch

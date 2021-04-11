@@ -23,10 +23,10 @@ TRANSFORM_CONFIGURATION = {
 configure_transforms.config = %TRANSFORM_CONFIGURATION
 
 # Dataset
-DetectionDataset.root_dir = '/Users/deepan/Documents/CudaVision/data_sample/blob/'
+DetectionDataset.root_dir = '/scratch/dpadma2s/cuda_data/data/blob/'
 DetectionDataset.transform = @configure_transforms()
 
-SegmentationDataset.root_dir = '/Users/deepan/Documents/CudaVision/data_sample/segmentation/'
+SegmentationDataset.root_dir = '/scratch/dpadma2s/cuda_data/data/segmentation/'
 SegmentationDataset.transform = @configure_transforms()
 
 DETECTION_DATASET = @DetectionDataset()
@@ -34,10 +34,10 @@ SEGMENTATION_DATASET = @SegmentationDataset()
 
 # DataLoader
 torch.utils.data.ConcatDataset.datasets = [%DETECTION_DATASET, %SEGMENTATION_DATASET]
-#get_train_valid_test_loader.dataset = @torch.utils.data.ConcatDataset()
-#get_train_valid_test_loader.collate_fn=@custom_collate_alldata
-get_train_valid_test_loader.dataset = %DETECTION_DATASET
-get_train_valid_test_loader.collate_fn=@custom_collate_detection
+get_train_valid_test_loader.dataset = @torch.utils.data.ConcatDataset()
+get_train_valid_test_loader.collate_fn=@custom_collate_alldata
+#get_train_valid_test_loader.dataset = %DETECTION_DATASET
+#get_train_valid_test_loader.collate_fn=@custom_collate_detection
 #get_train_valid_test_loader.dataset = %SEGMENTATION_DATASET
 #get_train_valid_test_loader.collate_fn=@custom_collate_segmentation
 get_train_valid_test_loader.batch_size = 1

@@ -83,7 +83,7 @@ class SegmentationDataset(Dataset):
         sample = {
             "dataset_class": "segmentation",
             "image": image,
-            "seg_mask": label,
+            "seg_target": label,
         }
 
         if self.transform:

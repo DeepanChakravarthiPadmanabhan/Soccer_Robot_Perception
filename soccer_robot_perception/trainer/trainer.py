@@ -146,18 +146,18 @@ class Trainer:
                 # To calculate loss for each data
                 for n, i in enumerate(data["dataset_class"]):
                     if i == "detection":
-                        det_target_collected.append(data["target"][n].unsqueeze_(0))
+                        det_target_collected.append(data["det_target"][n].unsqueeze_(0))
                         det_out_collected.append(det_out[n].unsqueeze_(0))
                         # plt.subplot(121)
                         # new_image = cv2.resize(input_image[n].detach().permute(1, 2, 0).numpy(), (160, 120), interpolation=cv2.INTER_NEAREST)
                         # plt.imshow(new_image)
                         # plt.subplot(122)
-                        # plt.imshow(data["target"][n][2].detach().numpy())
+                        # plt.imshow(data["det_target"][n][2].detach().numpy())
                         # plt.show()
                     else:
                         seg_out_collected.append(seg_out[n].unsqueeze_(0))
-                        seg_target_collected.append(data["target"][n].unsqueeze_(0))
-                        # plt.imshow(torch.argmax(data["target"][n], dim=0).numpy())
+                        seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
+                        # plt.imshow(torch.argmax(data["seg_target"][n], dim=0).numpy())
                         # plt.show()
 
                 if len(seg_target_collected) != 0:
@@ -286,11 +286,11 @@ class Trainer:
             # To calculate loss for each data
             for n, i in enumerate(data["dataset_class"]):
                 if i == "detection":
-                    det_target_collected.append(data["target"][n].unsqueeze_(0))
+                    det_target_collected.append(data["det_target"][n].unsqueeze_(0))
                     det_out_collected.append(det_out[n].unsqueeze_(0))
                 else:
                     seg_out_collected.append(seg_out[n].unsqueeze_(0))
-                    seg_target_collected.append(data["target"][n].unsqueeze_(0))
+                    seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
 
             if len(seg_target_collected) != 0:
                 seg_target_tensor = torch.cat(seg_target_collected, dim=0)
