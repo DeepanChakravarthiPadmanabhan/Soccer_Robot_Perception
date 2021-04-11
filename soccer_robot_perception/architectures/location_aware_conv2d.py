@@ -28,8 +28,8 @@ class LocationAwareConv2d(torch.nn.Conv2d):
             groups=groups,
             bias=bias,
         )
-        self.locationBias = location_bias
-        self.locationEncode = location_encoder
+        self.locationBias = torch.nn.Parameter(torch.zeros(120, 160, 3))
+        self.locationEncode = torch.autograd.Variable(torch.ones(120, 160, 3))
         if gradient:
             for i in range(w):
                 self.locationEncode[i, :, 1] = self.locationEncode[:, i, 0] = i / float(

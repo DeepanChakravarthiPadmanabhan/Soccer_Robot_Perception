@@ -48,9 +48,9 @@ def det_label_preprocessor(
         (channels, int(input_height / scale), int(input_width / scale))
     )
 
-    robot_map = np.zeros((int(input_height / scale), int(input_width / scale)))
-    ball_map = np.zeros((int(input_height / scale), int(input_width / scale)))
-    goalpost_map = np.zeros((int(input_height / scale), int(input_width / scale)))
+    robot_map = np.ones((int(input_height / scale), int(input_width / scale)))
+    ball_map = np.ones((int(input_height / scale), int(input_width / scale)))
+    goalpost_map = np.ones((int(input_height / scale), int(input_width / scale)))
     blob_centers = []
     for box, name in zip(bb, class_name):
 
@@ -119,6 +119,8 @@ def det_label_preprocessor(
     label_mask_shrinked[0] = ball_map
     label_mask_shrinked[1] = robot_map
     label_mask_shrinked[2] = goalpost_map
+    #plt.imshow((np.transpose(label_mask_shrinked, (1, 2, 0)) * 255).astype(np.uint8))
+    #plt.show()
     label_mask_shrinked = torch.tensor(label_mask_shrinked, dtype=torch.float)
     return label_mask_shrinked, blob_centers
 
@@ -149,7 +151,7 @@ def center_of_shape(image, name):
 
 
 def plot_blobs(points, variance):
-    blob_map = np.zeros((120, 160))
+    blob_map = np.ones((120, 160))
 
     for i in points:
         blob_point = [i[0], i[1]]

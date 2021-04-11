@@ -131,40 +131,6 @@ def evaluate_model(
         input_image = data["image"]
         det_out, seg_out = net(input_image)
 
-        dummy_ball_points = [
-            [53.0, 91.0, 1.0],
-            [61, 81, 1],
-            [0, 19, 1],
-        ]
-
-        dummy_robot_points = [
-            [50, 50, 2],
-            [98.0, 12.0, 2.0],
-            [14.0, 65.0, 2.0],
-            [89.0, 87.0, 2.0],
-        ]
-
-        # dummy_goalpost_points = [[13., 109., 3.],
-        #                      [13., 112., 3.],
-        #                      [13., 113., 3.],
-        #                      ]
-        dummy_goalpost_points = []
-
-        if visualize:
-            plt.subplot(231)
-            new_image = input_image[0].permute(1, 2, 0).detach().numpy()
-            plt.imshow(cv2.resize(new_image, (160, 120), cv2.INTER_NEAREST))
-            plt.title("Input")
-            plt.subplot(232)
-            plt.imshow(det_out[0][0].detach().numpy())
-            plt.title("Det out")
-            plt.subplot(233)
-            plt.imshow((torch.argmax(seg_out, dim=1)[0].detach().numpy()), cmap="gray")
-            plt.title("Seg out")
-            blob_map = plot_blobs(dummy_ball_points, 6)
-            plt.subplot(234)
-            plt.imshow(blob_map)
-            plt.title("Blobs")
 
         det_out_collected = []
         det_target_collected = []
@@ -176,25 +142,9 @@ def evaluate_model(
             if i == "detection":
                 det_target_collected.append(data["det_target"][n].unsqueeze_(0))
                 det_out_collected.append(det_out[n].unsqueeze_(0))
-                if visualize:
-                    plt.subplot(235)
-                    plt.imshow(data["det_target"][n][0][2].detach().numpy())
-                    plt.title("Det tar")
             else:
                 seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
                 seg_out_collected.append(seg_out[n].unsqueeze_(0))
-                if visualize:
-                    plt.subplot(236)
-                    plt.imshow(data["seg_target"][n][0].numpy(), cmap="gray")
-                    plt.title("Seg tar")
-        if visualize:
-            plt.savefig(
-                report_output_path
-                + "/output_images/"
-                + str(len(df_micro) + 1)
-                + "_pred.jpg"
-            )
-            plt.close()
 
         if len(det_target_collected) != 0:
             det_target_tensor = torch.cat(det_target_collected, dim=0)
@@ -204,6 +154,35 @@ def evaluate_model(
             ball_points = center_of_shape(det_out[0][0].detach().numpy(), 1)
             robot_points = center_of_shape(det_out[0][1].detach().numpy(), 2)
             goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 3)
+
+            # ball_points = [
+            #     [53.0, 91.0, 1.0],
+            #     [61, 81, 1],
+            #     [0, 19, 1],
+            # ]
+            #
+            # robot_points = [
+            #     [50, 50, 2],
+            #     [98.0, 12.0, 2.0],
+            #     [14.0, 65.0, 2.0],
+            #     [89.0, 87.0, 2.0],
+            # ]
+
+            # goalpost_points = [[13., 109., 3.],
+            #                      [13., 112., 3.],
+            #                      [13., 113., 3.],
+            #                      ]
+            # goalpost_points = []
+
+            blob_map = np.zeros(
+                (3, int(input_height / 4), int(input_width / 4))
+            )
+            ball_map = plot_blobs(ball_points, 6)
+            robot_map = plot_blobs(robot_points, 12)
+            goalpost_map = plot_blobs(goalpost_points, 6)
+            blob_map[0] = ball_map
+            blob_map[1] = robot_map
+            blob_map[2] = goalpost_map
 
             (
                 tp,
@@ -215,7 +194,7 @@ def evaluate_model(
                 f1,
                 accuracy,
                 fdr,
-            ) = calculate_det_metrics(dummy_ball_points, data["blob_centers"][0], 1)
+            ) = calculate_det_metrics(ball_points, data["blob_centers"][0], 1)
 
             df_det_ball.loc[len(df_det_ball)] = [
                 det_loss.detach().numpy(),
@@ -240,7 +219,7 @@ def evaluate_model(
                 f1,
                 accuracy,
                 fdr,
-            ) = calculate_det_metrics(dummy_robot_points, data["blob_centers"][0], 2)
+            ) = calculate_det_metrics(robot_points, data["blob_centers"][0], 2)
             df_det_robot.loc[len(df_det_robot)] = [
                 det_loss.detach().numpy(),
                 tp,
@@ -264,7 +243,7 @@ def evaluate_model(
                 f1,
                 accuracy,
                 fdr,
-            ) = calculate_det_metrics(dummy_goalpost_points, data["blob_centers"][0], 3)
+            ) = calculate_det_metrics(goalpost_points, data["blob_centers"][0], 3)
             df_det_goalpost.loc[len(df_det_goalpost)] = [
                 det_loss.detach().numpy(),
                 tp,
@@ -435,7 +414,50 @@ def evaluate_model(
             seg_loss.item(),
             det_loss.item(),
         )
-        # break
+
+        if visualize:
+            new_image = input_image[0].permute(1, 2, 0).detach().numpy()
+            plt.subplot(231)
+            plt.imshow(cv2.resize(new_image, (160, 120), cv2.INTER_NEAREST))
+            plt.title("Input")
+            plt.subplot(232)
+            plt.imshow((det_out[0].detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
+            plt.title("Det out")
+            plt.subplot(233)
+            plt.imshow((torch.argmax(seg_out, dim=1)[0].detach().numpy()), cmap="gray")
+            plt.title("Seg out")
+            if len(det_target_collected) != 0:
+                plt.subplot(234)
+                plt.imshow((data["det_target"][n][0].detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
+                plt.title("Det tar")
+            else:
+                plt.subplot(234)
+                plt.imshow(np.zeros((120, 160)), cmap='gray')
+                plt.title("Det tar")
+            if len(seg_target_collected) != 0:
+                plt.subplot(235)
+                plt.imshow(data["seg_target"][n][0].numpy(), cmap="gray")
+                plt.title("Seg tar")
+            else:
+                plt.subplot(235)
+                plt.imshow(np.zeros((120, 160)), cmap='gray')
+                plt.title("Seg tar")
+            if len(det_target_collected) != 0:
+                plt.subplot(236)
+                plt.imshow((np.transpose(blob_map, (1, 2, 0)) * 255).astype(np.uint8))
+                plt.title("Blobs")
+            else:
+                plt.subplot(236)
+                plt.imshow(np.zeros((120, 160)), cmap='gray')
+                plt.title("Blobs")
+            plt.savefig(
+                report_output_path
+                + "/output_images/"
+                + str(len(df_micro) + 1)
+                + "_pred.jpg"
+            )
+            plt.close()
+
     df_iou.loc["mean"] = df_iou.mean()
     df_micro.loc["mean"] = df_micro.mean()
     df_macro.loc["mean"] = df_macro.mean()
