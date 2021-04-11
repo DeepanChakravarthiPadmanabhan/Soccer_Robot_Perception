@@ -442,14 +442,9 @@ def evaluate_model(
                 plt.subplot(235)
                 plt.imshow(np.zeros((120, 160)), cmap='gray')
                 plt.title("Seg tar")
-            if len(det_target_collected) != 0:
-                plt.subplot(236)
-                plt.imshow((np.transpose(blob_map, (1, 2, 0)) * 255).astype(np.uint8))
-                plt.title("Blobs")
-            else:
-                plt.subplot(236)
-                plt.imshow(np.zeros((120, 160)), cmap='gray')
-                plt.title("Blobs")
+            plt.subplot(236)
+            plt.imshow((np.transpose(blob_map, (1, 2, 0)) * 255).astype(np.uint8))
+            plt.title("Blobs")
             plt.savefig(
                 report_output_path
                 + "/output_images/"

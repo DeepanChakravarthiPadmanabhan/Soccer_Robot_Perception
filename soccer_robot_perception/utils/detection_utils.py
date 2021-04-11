@@ -136,7 +136,7 @@ def center_of_shape(image, name):
     """
     out_centers = []
     blurred = cv2.GaussianBlur(image, (3, 3), 0)
-    thresh, im_bw = cv2.threshold(blurred, 0.1, 255, cv2.THRESH_BINARY)
+    thresh, im_bw = cv2.threshold(blurred, 1, 255, cv2.THRESH_BINARY)
     cnts = cv2.findContours(
         im_bw.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )

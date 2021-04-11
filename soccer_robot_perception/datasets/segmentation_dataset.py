@@ -32,7 +32,7 @@ class SegmentationDataset(Dataset):
         LOGGER.info("Root directory read: %s", root_dir)
         self.transform = transform
         self.all_images, self.all_labels = self._get_images_labels_lists(self.root_dir)
-        LOGGER.info("Number of samples in detection dataset: %d", len(self.all_images))
+        LOGGER.info("Number of samples in segmentation dataset: %d", len(self.all_images))
 
     @staticmethod
     def _get_images_labels_lists(root_dir):
