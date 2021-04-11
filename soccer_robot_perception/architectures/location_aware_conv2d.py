@@ -2,15 +2,39 @@ import torch
 
 
 class LocationAwareConv2d(torch.nn.Conv2d):
-    def __init__(self, gradient, w, h, location_bias, location_encoder, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1,
-                 groups=1, bias=True):
-        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
-                         groups=groups, bias=bias)
+    def __init__(
+        self,
+        gradient,
+        w,
+        h,
+        location_bias,
+        location_encoder,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+    ):
+        super().__init__(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias,
+        )
         self.locationBias = location_bias
         self.locationEncode = location_encoder
         if gradient:
             for i in range(w):
-                self.locationEncode[i, :, 1] = self.locationEncode[:, i, 0] = (i / float(w - 1))
+                self.locationEncode[i, :, 1] = self.locationEncode[:, i, 0] = i / float(
+                    w - 1
+                )
 
     def forward(self, inputs):
         if self.locationBias.device != inputs.device:

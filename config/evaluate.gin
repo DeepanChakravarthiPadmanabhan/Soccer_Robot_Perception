@@ -9,11 +9,8 @@ import soccer_robot_perception.utils.detection_utils
 import soccer_robot_perception.utils.segmentation_utils
 import soccer_robot_perception.evaluate.evaluate_model
 
-# INPUT_HEIGHT = 480
-# INPUT_WIDTH = 640
-
-INPUT_HEIGHT = 224
-INPUT_WIDTH = 224
+INPUT_HEIGHT = 480
+INPUT_WIDTH = 640
 
 NUM_SEG_CLASSES = 3
 NUM_DET_CLASSES = 3
@@ -21,7 +18,7 @@ NUM_DET_CLASSES = 3
 # Data transformation
 TRANSFORM_CONFIGURATION = {
 '0': {'transform_type': 'Resize', 'params': {'output_size': [%INPUT_HEIGHT, %INPUT_WIDTH]}},
-#'1': {'transform_type': 'NormalizeImage', 'params': {'mean' :[128, 128, 128], 'stddev': [128, 128, 128]}}
+# '1': {'transform_type': 'NormalizeImage', 'params': {'mean' :[0.5, 0.5, 0.5], 'stddev': [0.5, 0.5, 0.5]}},
 }
 configure_transforms.config = %TRANSFORM_CONFIGURATION
 
@@ -37,9 +34,12 @@ SEGMENTATION_DATASET = @SegmentationDataset()
 
 # DataLoader
 torch.utils.data.ConcatDataset.datasets = [%DETECTION_DATASET, %SEGMENTATION_DATASET]
-get_train_valid_test_loader.dataset = @torch.utils.data.ConcatDataset()
+#get_train_valid_test_loader.dataset = @torch.utils.data.ConcatDataset()
+#get_train_valid_test_loader.collate_fn=@custom_collate_alldata
+get_train_valid_test_loader.dataset = %DETECTION_DATASET
+get_train_valid_test_loader.collate_fn=@custom_collate_detection
 #get_train_valid_test_loader.dataset = %SEGMENTATION_DATASET
-get_train_valid_test_loader.collate_fn=@custom_collate_alldata
+#get_train_valid_test_loader.collate_fn=@custom_collate_segmentation
 get_train_valid_test_loader.batch_size = 1
 get_train_valid_test_loader.random_seed = 39248
 get_train_valid_test_loader.valid_size = 0
@@ -58,7 +58,8 @@ det_label_preprocessor.input_width = %INPUT_WIDTH
 det_label_preprocessor.input_height = %INPUT_HEIGHT
 det_label_preprocessor.channels = %NUM_DET_CLASSES
 det_label_preprocessor.visualize_label_masks = False
-det_label_preprocessor.variance = 4
+det_label_preprocessor.small_variance = 6
+det_label_preprocessor.large_variance = 12
 
 # Evaluation
 evaluate_model.net = @NimbRoNet2()
@@ -75,5 +76,5 @@ evaluate_model.seg_criterion = @torch.nn.CrossEntropyLoss()
 
 evaluate_model.det_criterion = @torch.nn.MSELoss()
 
-evaluate_model.visualize = False
+evaluate_model.visualize = True
 evaluate_model.data_loaders = %DATA_LOADERS

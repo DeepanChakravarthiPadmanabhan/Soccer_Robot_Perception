@@ -35,12 +35,13 @@ def train_model(
     train_loader, valid_loader, test_loader = data_loaders
 
     net.to(device)
-    summary(net,
-            input_size=(3, input_height, input_width),
-            batch_size=train_loader.batch_size,
-            device=device.type,
-            )
-    trainer=Trainer(
+    summary(
+        net,
+        input_size=(3, input_height, input_width),
+        batch_size=train_loader.batch_size,
+        device=device.type,
+    )
+    trainer = Trainer(
         net=net,
         train_loader=train_loader,
         valid_loader=valid_loader,

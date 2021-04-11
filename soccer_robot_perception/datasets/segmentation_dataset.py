@@ -6,7 +6,9 @@ import cv2
 
 import gin
 import torch
+import numpy as np
 from torch.utils.data import Dataset
+import PIL.Image
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,8 +77,8 @@ class SegmentationDataset(Dataset):
 
     def __getitem__(self, idx: int):
         # TODO: Fix input and target data structures and format
-        image = cv2.imread(self.all_images[idx])
-        label = cv2.imread(self.all_labels[idx])
+        image = cv2.imread(self.all_images[idx]) / 255.0
+        label = np.asarray(PIL.Image.open(self.all_labels[idx]))
 
         sample = {
             "dataset_class": "segmentation",

@@ -140,7 +140,7 @@ def get_train_valid_test_loader(
 
     test_loader = torch.utils.data.DataLoader(
         dataset,
-        batch_size=batch_size,
+        batch_size=1,
         sampler=test_sampler,
         num_workers=num_workers,
         pin_memory=pin_memory,

@@ -72,7 +72,7 @@ class DetectionDataset(Dataset):
 
     def __getitem__(self, idx: int):
         # TODO: Fix input and target data structures and format
-        image = cv2.imread(self.all_images[idx])
+        image = cv2.imread(self.all_images[idx]) / 255.0
         name, bb_list = read_xml_file(self.all_labels[idx])
 
         sample = {

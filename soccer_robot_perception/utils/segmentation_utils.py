@@ -8,20 +8,11 @@ import pandas as pd
 
 def seg_label_preprocessor(label_mask):
 
-    label_mask = torch.sum(torch.tensor(label_mask, dtype=torch.float), dim=2)
-    label_mask[label_mask == 0.] = 0  # Background
-    label_mask[label_mask == 128.] = 1 # Field
-    label_mask[label_mask == 256.] = 2  # Lines
-
-    # label_mask.unsqueeze_(dim=2)
-    # label_mask = label_mask.expand(56, 56, 3)
-
-    label_mask = torch.nn.functional.one_hot(label_mask.long(),  num_classes=3)
-    label_mask = label_mask.permute(2, 0, 1)
-    # label_mask[1] = label_mask[1] * 2 # Field
-    # label_mask[2] = label_mask[2] * 3 # Lines
+    label_mask = torch.tensor(label_mask, dtype=torch.float)
+    label_mask[label_mask == 3] = 1  # Map ball to field. 0 - BG, 1 - Field, 2 - Lines
 
     return label_mask
+
 
 @gin.configurable
 def calculate_weight(
@@ -73,9 +64,8 @@ def calculate_weight(
     segmentation_class_counts.update(labels)
 
     for sample in train_loader:
-        if sample["dataset_class"][0] == 'segmentation':
+        if sample["dataset_class"][0] == "segmentation":
             labels = sample["target"][0]
-            # labels = torch.argmax(labels, dim=1)
             segmentation_class_counts.update(labels.flatten().tolist())
     total_count_segmentation_labels = max(sum(segmentation_class_counts), 1)
     segmentation_class_weights = torch.tensor(
@@ -108,23 +98,24 @@ def calculate_weight(
             os.makedirs(os.path.dirname(report_path))
         report_path_str = os.path.join(report_path, "")
         excel_writer = pd.ExcelWriter(
-            os.path.join(report_path_str, "report_statistics.xlsx"), engine="xlsxwriter"
+            os.path.join("report/", "report_statistics.xlsx"), engine="xlsxwriter"
         )
         df_count_metrics.to_excel(excel_writer, sheet_name="frequency-weight")
         excel_writer.save()
 
     return segmentation_class_weights
 
-def total_variation_loss(img: torch.tensor,
-                         weight: int=1):
+
+def total_variation_loss(img: torch.tensor, weight: int = 1):
     bs, num_channels, height, width = img.shape
-    tv_h = ((img[:,:,1:,:] - img[:,:,:-1,:]).pow(2)).sum()
-    tv_w = ((img[:,:,:,1:] - img[:,:,:,:-1]).pow(2)).sum()
+    tv_h = ((img[:, :, 1:, :] - img[:, :, :-1, :]).pow(2)).sum()
+    tv_w = ((img[:, :, :, 1:] - img[:, :, :, :-1]).pow(2)).sum()
     tv_loss = weight * (tv_h + tv_w) / (bs * num_channels * height * width)
     return tv_loss
 
+
 def compute_total_variation_loss(img):
-    img_bg = img[:, 0, :, : ]
+    img_bg = img[:, 0, :, :]
     img_bg.unsqueeze_(1)
     img_field = img[:, 1, :, :]
     img_field.unsqueeze_(1)

@@ -43,11 +43,17 @@ def custom_collate_detection(
     :return: batch as dictionary to tensors or lists of tensors
     """
 
-    bb_list = []
+    box_coordinates_list = []
+    class_list = []
+    blob_centers_list = []
     for element in batch:
-        bb_list.append(element.pop("det_boxcord"))
+        box_coordinates_list.append(element.pop("det_boxcord"))
+        class_list.append(element.pop("det_class"))
+        blob_centers_list.append(element.pop("blob_centers"))
     batch = default_collate(batch)
-    batch["det_boxcord"] = bb_list
+    batch["det_boxcord"] = box_coordinates_list
+    batch["det_class"] = class_list
+    batch["blob_centers"] = blob_centers_list
     return batch
 
 
@@ -69,29 +75,31 @@ def custom_collate_alldata(
     """
     box_coordinates_list = []
     class_list = []
+    blob_centers_list = []
     mask_list = []
     seg_mask_list = []
 
     for element in batch:
         # Clean Detection Dataset
 
-        if element["dataset_class"] == 'detection':
+        if element["dataset_class"] == "detection":
             box_coordinates_list.append(element.pop("det_boxcord"))
             class_list.append(element.pop("det_class"))
-
+            blob_centers_list.append(element.pop("blob_centers"))
             seg_mask_list.append([])
 
-
         # Clean Segmentation Dataset
-        if element["dataset_class"] == 'segmentation':
+        if element["dataset_class"] == "segmentation":
             box_coordinates_list.append([])
             class_list.append([])
+            blob_centers_list.append([])
 
             seg_mask_list.append(element.pop("seg_mask"))
 
     batch = default_collate(batch)
     batch["det_boxcord"] = box_coordinates_list
     batch["det_class"] = class_list
+    batch["blob_centers"] = blob_centers_list
     batch["seg_mask"] = seg_mask_list
 
     return batch
