@@ -21,8 +21,6 @@ from soccer_robot_perception.utils.segmentation_utils import (
 
 import wandb
 
-# wandb.login()
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -42,6 +40,7 @@ class Trainer:
         optimizer_class,
         model_output_path,
         device,
+        wandb_key,
         input_height: int,
         input_width: int,
         lr_step_size=5,
@@ -52,6 +51,7 @@ class Trainer:
         scheduler=None,
         summary_writer=SummaryWriter(),
         evaluate=False,
+        run_name="soccer-robot",
     ):
         self.net = net
         self.train_loader = train_loader
@@ -74,6 +74,8 @@ class Trainer:
         self.loss_scale = 1.0
         self.evaluate = evaluate
 
+        os.environ["WANDB_API_KEY"] = wandb_key
+        os.environ["WANDB_NAME"] = run_name
         config = dict(
             num_epochs=self.num_epochs,
             optimizer_class=optimizer_class,
@@ -81,7 +83,7 @@ class Trainer:
             weight_decay=self.weight_decay,
             batch_size=len(self.train_loader.batch_sampler),
         )
-        # wandb.init(config=config, project='soccer-robot')
+        wandb.init(config=config, project='soccer-robot')
 
     def _sample_to_device(self, sample):
         device_sample = {}
@@ -116,7 +118,7 @@ class Trainer:
         LOGGER.info("Ready to start training")
         tic = timeit.default_timer()
         best_validation_loss = maxsize
-        # wandb.watch(self.net, log='all')
+        wandb.watch(self.net, log='all')
 
         for epoch in range(self.num_epochs):
             start = time.time()
@@ -152,12 +154,12 @@ class Trainer:
                         # new_image = cv2.resize(input_image[n].detach().permute(1, 2, 0).numpy(), (160, 120), interpolation=cv2.INTER_NEAREST)
                         # plt.imshow(new_image)
                         # plt.subplot(122)
-                        # plt.imshow(data["det_target"][n][2].detach().numpy())
+                        # plt.imshow(data["det_target"][n][0][2].detach().numpy())
                         # plt.show()
                     else:
                         seg_out_collected.append(seg_out[n].unsqueeze_(0))
                         seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
-                        # plt.imshow(torch.argmax(data["seg_target"][n], dim=0).numpy())
+                        # plt.imshow(data["seg_target"][n][0].numpy(), cmap='gray')
                         # plt.show()
 
                 if len(seg_target_collected) != 0:
@@ -231,11 +233,11 @@ class Trainer:
                 epoch + 1,
                 av_valid_loss,
             )
-            # wandb.log({"train_loss": av_train_loss, "validation_loss": av_valid_loss}, step=epoch + 1)
+            wandb.log({"train_loss": av_train_loss, "validation_loss": av_valid_loss}, step=epoch + 1)
             LOGGER.info("Current epoch completed in %f s", time.time() - start)
 
-            # if av_valid_loss < best_validation_loss and model_path and best_model_path:
-            if True:
+            if av_valid_loss < best_validation_loss and model_path and best_model_path:
+            #if True:
                 best_validation_loss = av_valid_loss
                 best_model_path = model_path
                 LOGGER.info(
@@ -325,6 +327,6 @@ class Trainer:
             )
             av_loss += loss.item() / self.loss_scale
 
-        # av_valid_loss = av_loss / valid_len
-        av_valid_loss = 0
+        av_valid_loss = av_loss / valid_len
+        # av_valid_loss = 0
         return av_valid_loss

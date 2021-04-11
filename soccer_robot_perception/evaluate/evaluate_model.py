@@ -16,7 +16,6 @@ from soccer_robot_perception.utils.metrics import (
     iou_metrics_preprocess,
 )
 from soccer_robot_perception.utils.detection_utils import center_of_shape, plot_blobs
-from scipy.stats import multivariate_normal
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,11 +33,13 @@ def evaluate_model(
         torch.utils.data.DataLoader,
         torch.utils.data.DataLoader,
     ],
+    wandb_key,
     loss_factor: float = 0.5,
     num_classes: int = 3,
     visualize: bool = False,
     input_width: int = 640,
     input_height: int = 480,
+    run_name="soccer-robot",
 ) -> None:
     """
     This function evaluates the model trained on a set of test image and provides a report with evaluation metrics.
@@ -173,18 +174,18 @@ def evaluate_model(
         # To calculate loss for each data
         for n, i in enumerate(data["dataset_class"]):
             if i == "detection":
-                det_target_collected.append(data["target"][n].unsqueeze_(0))
+                det_target_collected.append(data["det_target"][n].unsqueeze_(0))
                 det_out_collected.append(det_out[n].unsqueeze_(0))
                 if visualize:
                     plt.subplot(235)
-                    plt.imshow(data["target"][n][2].detach().numpy())
+                    plt.imshow(data["det_target"][n][0][2].detach().numpy())
                     plt.title("Det tar")
             else:
-                seg_target_collected.append(data["target"][n].unsqueeze_(0))
+                seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
                 seg_out_collected.append(seg_out[n].unsqueeze_(0))
                 if visualize:
                     plt.subplot(236)
-                    plt.imshow(data["target"][n].numpy(), cmap="gray")
+                    plt.imshow(data["seg_target"][n][0].numpy(), cmap="gray")
                     plt.title("Seg tar")
         if visualize:
             plt.savefig(

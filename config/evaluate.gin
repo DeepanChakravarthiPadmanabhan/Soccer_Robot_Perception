@@ -15,10 +15,12 @@ INPUT_WIDTH = 640
 NUM_SEG_CLASSES = 3
 NUM_DET_CLASSES = 3
 
+RUN_NAME = "soccer-robot"
+WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
+
 # Data transformation
 TRANSFORM_CONFIGURATION = {
 '0': {'transform_type': 'Resize', 'params': {'output_size': [%INPUT_HEIGHT, %INPUT_WIDTH]}},
-# '1': {'transform_type': 'NormalizeImage', 'params': {'mean' :[0.5, 0.5, 0.5], 'stddev': [0.5, 0.5, 0.5]}},
 }
 configure_transforms.config = %TRANSFORM_CONFIGURATION
 
@@ -66,15 +68,9 @@ evaluate_model.net = @NimbRoNet2()
 evaluate_model.num_classes = %NUM_SEG_CLASSES
 evaluate_model.input_height = %INPUT_HEIGHT
 evaluate_model.input_width = %INPUT_WIDTH
-
-# calculate_weight.data_loaders = %DATA_LOADERS
-# calculate_weight.num_classes = %NUM_CHARACTERS
-# calculate_weight.loader_idx = 2
-# calculate_weight.report_path = "report/"
-# torch.nn.CrossEntropyLoss.weight = @calculate_weight()
 evaluate_model.seg_criterion = @torch.nn.CrossEntropyLoss()
-
 evaluate_model.det_criterion = @torch.nn.MSELoss()
-
 evaluate_model.visualize = True
 evaluate_model.data_loaders = %DATA_LOADERS
+evaluate_model.run_name = %RUN_NAME
+evaluate_model.wandb_key = %WANDB_KEY

@@ -94,8 +94,6 @@ def iou_metrics_preprocess(tensor_input):
 
 def calculate_iou(target_img, input_img):
 
-    target_img = iou_metrics_preprocess(target_img)
-    input_img = iou_metrics_preprocess(input_img)
     input_img = input_img.squeeze(0)
     target_img = target_img.squeeze(0)
 

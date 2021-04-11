@@ -5,6 +5,7 @@ import torch
 import torchvision
 import cv2
 import matplotlib.pyplot as plt
+import random
 
 from soccer_robot_perception.utils.detection_utils import det_label_preprocessor
 from soccer_robot_perception.utils.segmentation_utils import seg_label_preprocessor
@@ -14,7 +15,6 @@ def get_transform(transform_type: str, params: typing.Dict):
     transform_class = {
         "Resize": Resize,
         "RandomOrientation": RandomOrientation,
-        "RandomCrop": RandomCrop,
         "NormalizeImage": NormalizeImage,
     }[transform_type]
     return transform_class(**params)
@@ -137,8 +137,4 @@ class ToTensor(object):
 
 
 class RandomOrientation(object):
-    pass
-
-
-class RandomCrop(object):
     pass

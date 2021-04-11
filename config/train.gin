@@ -14,6 +14,9 @@ INPUT_WIDTH = 640
 NUM_SEG_CLASSES = 3
 NUM_DET_CLASSES = 3
 
+RUN_NAME = "soccer-robot"
+WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
+
 # Data transformation
 TRANSFORM_CONFIGURATION = {
 '0': {'transform_type': 'Resize', 'params': {'output_size': [%INPUT_HEIGHT, %INPUT_WIDTH]}},
@@ -74,6 +77,8 @@ Trainer.patience = 10
 Trainer.num_epochs = 100
 Trainer.weight_decay = 0
 Trainer.evaluate = False
+Trainer.run_name = %RUN_NAME
+Trainer.wandb_key = %WANDB_KEY
 
 # Evaluation
 evaluate_model.net = @NimbRoNet2()
@@ -84,3 +89,5 @@ evaluate_model.seg_criterion = @torch.nn.CrossEntropyLoss()
 evaluate_model.det_criterion = @torch.nn.MSELoss()
 evaluate_model.visualize = True
 evaluate_model.data_loaders = %DATA_LOADERS
+evaluate_model.run_name = %RUN_NAME
+evaluate_model.wandb_key = %WANDB_KEY
