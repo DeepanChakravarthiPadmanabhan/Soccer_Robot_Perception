@@ -23,6 +23,8 @@ dependencies = [
     "torchsummary>=1.5.1",
     "xlsxwriter>=1.2.9",
     "black",
+    "imutils",
+    "wandb",
 ]
 
 setup(
