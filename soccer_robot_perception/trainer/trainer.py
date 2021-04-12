@@ -33,8 +33,10 @@ class Trainer:
     def __init__(
         self,
         net,
-        train_loader,
-        valid_loader,
+        train_seg_loader,
+        valid_seg_loader,
+        train_det_loader,
+        valid_det_loader,
         seg_criterion,
         det_criterion,
         optimizer_class,
@@ -55,8 +57,10 @@ class Trainer:
         run_name="soccer-robot",
     ):
         self.net = net
-        self.train_loader = train_loader
-        self.valid_loader = valid_loader
+        self.train_seg_loader = train_seg_loader
+        self.valid_seg_loader = valid_seg_loader
+        self.train_det_loader = train_det_loader
+        self.valid_det_loader = valid_det_loader
         self.model_output_path = model_output_path
         self.lr = lr
         self.patience = patience
@@ -64,9 +68,20 @@ class Trainer:
         self.num_epochs = num_epochs
         self.seg_criterion = seg_criterion
         self.det_criterion = det_criterion
-        self.optimizer = optimizer_class(
-            self.net.parameters(), lr=self.lr, weight_decay=self.weight_decay
-        )
+        self.optimizer = optimizer_class([
+            {"params": self.net.encoder_block1.parameters(), "lr": 0.0001},
+            {"params": self.net.encoder_block2.parameters(), "lr": 0.0001},
+            {"params": self.net.encoder_block3.parameters(), "lr": 0.0001},
+            {"params": self.net.encoder_block4.parameters(), "lr": 0.0001},
+            {"params": self.net.decoder_block1.parameters(), "lr": 0.0001},
+            {"params": self.net.decoder_block2.parameters(), "lr": 0.0001},
+            {"params": self.net.decoder_block3.parameters(), "lr": 0.0001},
+            {"params": self.net.segmentation_head.parameters(), "lr": 0.001},
+            {"params": self.net.detection_head.parameters(), "lr": 0.001},
+            {"params": self.net.conv1x1_1.parameters(), "lr": 0.01},
+            {"params": self.net.conv1x1_2.parameters(), "lr": 0.01},
+            {"params": self.net.conv1x1_3.parameters(), "lr": 0.01},
+        ])
         self.scheduler = StepLR(self.optimizer, step_size=lr_step_size, gamma=0.1)
         self.tensorboard_writer = summary_writer
         self.device = device
@@ -107,7 +122,8 @@ class Trainer:
         model_path = os.path.join(self.model_output_path, "model.pth")
         best_model_path = model_path
         patience_count = self.patience
-        train_len = len(self.train_loader.batch_sampler)
+        det_train_len = len(self.train_det_loader.batch_sampler)
+        seg_train_len = len(self.train_seg_loader.batch_sampler)
 
         LOGGER.info("Ready to start training")
         tic = timeit.default_timer()
@@ -119,100 +135,61 @@ class Trainer:
             self.net.train(True)
 
             self.current_epoch = epoch + 1
-            sample_size = 10
 
-            running_loss = 0.0
             av_loss = 0.0
-            running_segment_loss = 0.0
-            running_regression_loss = 0.0
 
-            for batch, data in enumerate(self.train_loader):
-                LOGGER.info("TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
+            total_det_loss = 0
+            total_seg_loss = 0
+            for batch, data in enumerate(self.train_det_loader):
+
+                LOGGER.info("DET TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
                 data = self._sample_to_device(data)
 
                 input_image = data["image"]
                 self.optimizer.zero_grad()
                 det_out, seg_out = self.net(input_image)
 
-                det_out_collected = []
-                det_target_collected = []
-                seg_out_collected = []
-                seg_target_collected = []
+                det_loss = self.det_criterion(det_out, data["det_target"])
+                total_det_loss += det_loss
 
-                # To calculate loss for each data
-                for n, i in enumerate(data["dataset_class"]):
-                    if i == "detection":
-                        det_target_collected.append(data["det_target"][n].unsqueeze_(0))
-                        det_out_collected.append(det_out[n].unsqueeze_(0))
-                        # plt.subplot(121)
-                        # new_image = cv2.resize(input_image[n].detach().permute(1, 2, 0).numpy(), (160, 120), interpolation=cv2.INTER_NEAREST)
-                        # plt.imshow(new_image)
-                        # plt.subplot(122)
-                        # plt.imshow(data["det_target"][n][0][2].detach().numpy())
-                        # plt.show()
-                    else:
-                        seg_out_collected.append(seg_out[n].unsqueeze_(0))
-                        seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
-                        # plt.imshow(data["seg_target"][n][0].numpy(), cmap='gray')
-                        # plt.show()
+##############################
+            for batch, data in enumerate(self.train_seg_loader):
+                LOGGER.info("SEG TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
+                data = self._sample_to_device(data)
 
-                if len(seg_target_collected) != 0:
-                    seg_target_tensor = torch.cat(seg_target_collected, dim=0)
-                    seg_out_tensor = torch.cat(seg_out_collected, dim=0)
-                    seg_tv_loss = compute_total_variation_loss(seg_out_tensor)
-                    seg_loss = (
-                        self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
+                input_image = data["image"]
+
+                det_out, seg_out = self.net(input_image)
+
+                seg_tv_loss = compute_total_variation_loss(seg_out)
+                seg_loss = (
+                        self.seg_criterion(seg_out, data["seg_target"].long())
                         + seg_tv_loss
-                    )
-                else:
-                    seg_loss = torch.tensor(
-                        0, dtype=torch.float32, requires_grad=True, device=self.device
-                    )
-
-                if len(det_target_collected) != 0:
-                    det_target_tensor = torch.cat(det_target_collected, dim=0)
-                    det_out_tensor = torch.cat(det_out_collected, dim=0)
-                    det_loss = self.det_criterion(det_out_tensor, det_target_tensor)
-                else:
-                    det_loss = torch.tensor(
-                        0, dtype=torch.float32, requires_grad=True, device=self.device
-                    )
-
-                loss = seg_loss + det_loss
-                LOGGER.info(
-                    "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
-                    self.current_epoch,
-                    batch + 1,
-                    loss.item(),
-                    seg_loss.item(),
-                    det_loss.item(),
                 )
+                total_seg_loss += seg_loss
+###############################
 
-                loss.backward()
+            loss = total_det_loss + total_seg_loss
 
-                self.optimizer.step()
+            LOGGER.info(
+                "epoch: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                self.current_epoch,
+                loss.item(),
+                total_seg_loss.item(),
+                total_det_loss.item(),
+            )
 
-                av_loss += loss.item() / self.loss_scale
-                running_loss += loss.item() / self.loss_scale
-                running_segment_loss += seg_loss.item() / self.loss_scale
-                running_regression_loss += det_loss.item() / self.loss_scale
+            loss.backward()
 
-                if batch % sample_size == (sample_size - 1):
-                    LOGGER.info(
-                        "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
-                        self.current_epoch,
-                        batch + 1,
-                        running_loss / sample_size,
-                        running_segment_loss / sample_size,
-                        running_regression_loss / sample_size,
-                    )
-                    running_loss = 0.0
+            self.optimizer.step()
+
+            av_loss += loss.item() / self.loss_scale
 
             if self.scheduler:
                 self.scheduler.step()
 
             # output training loss
-            av_train_loss = av_loss / train_len
+            av_train_loss = av_loss / (det_train_len + seg_train_len)
 
             LOGGER.info(
                 "TRAIN: epoch: %d, average loss: %f",
@@ -263,64 +240,56 @@ class Trainer:
 
     def validation(self):
         LOGGER.info("Validation Module")
-        valid_len = len(self.valid_loader.batch_sampler)
+        seg_valid_len = len(self.valid_seg_loader.batch_sampler)
+        det_valid_len = len(self.valid_det_loader.batch_sampler)
 
         self.net.train(False)
 
         av_loss = 0.0
 
-        for batch, data in enumerate(self.valid_loader):
+        total_det_loss = 0
+        total_seg_loss = 0
+
+        for batch, data in enumerate(self.valid_det_loader):
+            LOGGER.info("DET VALIDATION: batch %d", batch + 1)
             data = self._sample_to_device(data)
+
             input_image = data["image"]
             det_out, seg_out = self.net(input_image)
 
-            det_out_collected = []
-            det_target_collected = []
-            seg_out_collected = []
-            seg_target_collected = []
+            det_loss = self.det_criterion(det_out, data["det_target"])
+            total_det_loss += det_loss
 
-            # To calculate loss for each data
-            for n, i in enumerate(data["dataset_class"]):
-                if i == "detection":
-                    det_target_collected.append(data["det_target"][n].unsqueeze_(0))
-                    det_out_collected.append(det_out[n].unsqueeze_(0))
-                else:
-                    seg_out_collected.append(seg_out[n].unsqueeze_(0))
-                    seg_target_collected.append(data["seg_target"][n].unsqueeze_(0))
+        ##############################
+        for batch, data in enumerate(self.valid_seg_loader):
+            LOGGER.info("SEG VALIDATION: batch %d", batch + 1)
+            data = self._sample_to_device(data)
 
-            if len(seg_target_collected) != 0:
-                seg_target_tensor = torch.cat(seg_target_collected, dim=0)
-                seg_out_tensor = torch.cat(seg_out_collected, dim=0)
-                seg_tv_loss = compute_total_variation_loss(seg_out_tensor)
-                seg_loss = (
-                    self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
+            input_image = data["image"]
+
+            det_out, seg_out = self.net(input_image)
+
+            seg_tv_loss = compute_total_variation_loss(seg_out)
+            seg_loss = (
+                    self.seg_criterion(seg_out, data["seg_target"].long())
                     + seg_tv_loss
-                )
-            else:
-                seg_loss = torch.tensor(
-                    0, dtype=torch.float32, requires_grad=True, device=self.device
-                )
-
-            if len(det_target_collected) != 0:
-                det_target_tensor = torch.cat(det_target_collected, dim=0)
-                det_out_tensor = torch.cat(det_out_collected, dim=0)
-                det_loss = self.det_criterion(det_out_tensor, det_target_tensor)
-            else:
-                det_loss = torch.tensor(
-                    0, dtype=torch.float32, requires_grad=True, device=self.device
-                )
-
-            loss = seg_loss + det_loss
-            LOGGER.info(
-                "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
-                self.current_epoch,
-                batch + 1,
-                loss.item(),
-                seg_loss.item(),
-                det_loss.item(),
             )
-            av_loss += loss.item() / self.loss_scale
+            total_seg_loss += seg_loss
+        ###############################
 
-        av_valid_loss = av_loss / valid_len
+        loss = total_det_loss + total_seg_loss
+
+
+        LOGGER.info(
+            "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+            self.current_epoch,
+            batch + 1,
+            loss.item(),
+            total_seg_loss.item(),
+            total_det_loss.item(),
+        )
+        av_loss += loss.item() / self.loss_scale
+
+        av_valid_loss = av_loss / (seg_valid_len + det_valid_len)
         # av_valid_loss = 0
         return av_valid_loss

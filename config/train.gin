@@ -48,19 +48,33 @@ SEGMENTATION_DATASET = @SegmentationDataset()
 
 # DataLoader
 torch.utils.data.ConcatDataset.datasets = [%DETECTION_DATASET, %SEGMENTATION_DATASET]
-get_train_valid_test_loader.dataset = @torch.utils.data.ConcatDataset()
-get_train_valid_test_loader.collate_fn=@custom_collate_alldata
-#get_train_valid_test_loader.dataset = %DETECTION_DATASET
-#get_train_valid_test_loader.collate_fn=@custom_collate_detection
-#get_train_valid_test_loader.dataset = %SEGMENTATION_DATASET
-#get_train_valid_test_loader.collate_fn=@custom_collate_segmentation
-get_train_valid_test_loader.batch_size = %BATCH_SIZE
-get_train_valid_test_loader.random_seed = 39248
-get_train_valid_test_loader.valid_size = %VALID_RATIO
-get_train_valid_test_loader.test_size = %TEST_RATIO
-get_train_valid_test_loader.num_workers = 0
+get_train_valid_test_loader_both.dataset = @torch.utils.data.ConcatDataset()
+get_train_valid_test_loader_both.collate_fn=@custom_collate_alldata
+get_train_valid_test_loader_both.batch_size = 4
+get_train_valid_test_loader_both.random_seed = 39248
+get_train_valid_test_loader_both.valid_size = %VALID_RATIO
+get_train_valid_test_loader_both.test_size = %TEST_RATIO
+get_train_valid_test_loader_both.num_workers = 0
+CONCAT_DATA_LOADERS = @get_train_valid_test_loader_both()
 
-DATA_LOADERS = @get_train_valid_test_loader()
+get_train_valid_test_loader_det.dataset = %DETECTION_DATASET
+get_train_valid_test_loader_det.collate_fn=@custom_collate_detection
+get_train_valid_test_loader_det.batch_size = 32
+get_train_valid_test_loader_det.random_seed = 39248
+get_train_valid_test_loader_det.valid_size = %VALID_RATIO
+get_train_valid_test_loader_det.test_size = %TEST_RATIO
+get_train_valid_test_loader_det.num_workers = 0
+DET_DATA_LOADERS = @get_train_valid_test_loader_det()
+
+get_train_valid_test_loader_seg.dataset = %SEGMENTATION_DATASET
+get_train_valid_test_loader_seg.collate_fn=@custom_collate_segmentation
+get_train_valid_test_loader_seg.batch_size = 16
+get_train_valid_test_loader_seg.random_seed = 39248
+get_train_valid_test_loader_seg.valid_size = %VALID_RATIO
+get_train_valid_test_loader_seg.test_size = %TEST_RATIO
+get_train_valid_test_loader_seg.num_workers = 0
+SEG_DATA_LOADERS = @get_train_valid_test_loader_seg()
+
 
 # Architecture
 NimbRoNet2.input_width = %INPUT_WIDTH
@@ -81,7 +95,9 @@ train_model.input_width = %INPUT_WIDTH
 train_model.input_height = %INPUT_HEIGHT
 train_model.data_loaders = %DATA_LOADERS
 train_model.net = @NimbRoNet2()
-train_model.data_loaders = %DATA_LOADERS
+train_model.seg_data_loaders = %SEG_DATA_LOADERS
+train_model.det_data_loaders = %DET_DATA_LOADERS
+
 Trainer.seg_criterion = @torch.nn.CrossEntropyLoss()
 Trainer.det_criterion = @torch.nn.MSELoss()
 Trainer.optimizer_class = %OPTIMIZER
@@ -102,7 +118,8 @@ evaluate_model.input_width = %INPUT_WIDTH
 evaluate_model.seg_criterion = @torch.nn.CrossEntropyLoss()
 evaluate_model.det_criterion = @torch.nn.MSELoss()
 evaluate_model.visualize = True
-evaluate_model.data_loaders = %DATA_LOADERS
+evaluate_model.seg_data_loaders = %SEG_DATA_LOADERS
+evaluate_model.det_data_loaders = %DET_DATA_LOADERS
 evaluate_model.run_name = %RUN_NAME
 evaluate_model.wandb_key = %WANDB_KEY
 

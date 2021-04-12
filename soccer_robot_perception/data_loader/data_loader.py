@@ -64,7 +64,7 @@ def split(
 
 
 @gin.configurable
-def get_train_valid_test_loader(
+def get_train_valid_test_loader_det(
     dataset: torch.utils.data.Dataset,
     batch_size: int = 8,
     random_seed: int = 0,
@@ -81,7 +81,7 @@ def get_train_valid_test_loader(
 ]:
     """
     :param dataset: torch.utils.data.Dataset()
-        Dataset class e.g. GiniDataset()
+        Dataset class e.g. SegDataset()
     :param batch_size: int
         Batch size for training. The loader provides batch_size number of samples for each training time step.
     :param random_seed: int
@@ -148,3 +148,177 @@ def get_train_valid_test_loader(
     )
 
     return train_loader, valid_loader, test_loader
+
+
+@gin.configurable
+def get_train_valid_test_loader_seg(
+    dataset: torch.utils.data.Dataset,
+    batch_size: int = 8,
+    random_seed: int = 0,
+    valid_size: float = 0.1,
+    test_size: float = 0.1,
+    shuffle: bool = True,
+    num_workers: int = 1,
+    pin_memory: bool = True,
+    collate_fn: typing.Callable = custom_collate_alldata,
+) -> typing.Tuple[
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+]:
+    """
+    :param dataset: torch.utils.data.Dataset()
+        Dataset class e.g. SegDataset()
+    :param batch_size: int
+        Batch size for training. The loader provides batch_size number of samples for each training time step.
+    :param random_seed: int
+        For setting np.random.seed() for shuffling (if shuffle==True)
+    :param valid_size: float
+        Validation data ratio, should be <1.0
+    :param test_size: float
+        Test data ratio, should be <1.0
+    :param shuffle: bool
+        If set true, the data is shuffled before sampling
+    :param num_workers:: int
+        How many subprocesses to use for data loading. 0 means the data will be loaded in the main process only.
+    :param pin_memory: bool
+        Decided whether data loader should copy the Tensors into CUDA pinned memory.
+    :return:
+        train_loader, valid_loader, test_loader:
+        Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]
+        DataLoader for each sets of data.
+    """
+
+    # load dataset
+    # get train, validation and test samplers
+    train_sampler, valid_sampler, test_sampler = split(
+        dataset,
+        train=1.0 - valid_size - test_size,
+        valid=valid_size,
+        test=test_size,
+        shuffle=shuffle,
+        random_seed=random_seed,
+    )
+    LOGGER.info(
+        "Loading datasets: %d training images, %d validation images, %d test images with batch size %d",
+        len(train_sampler),
+        len(valid_sampler),
+        len(test_sampler),
+        batch_size,
+    )
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=train_sampler,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        collate_fn=collate_fn,
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=valid_sampler,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        collate_fn=collate_fn,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=1,
+        sampler=test_sampler,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        collate_fn=collate_fn,
+    )
+
+    return train_loader, valid_loader, test_loader
+
+@gin.configurable
+def get_train_valid_test_loader_both(
+    dataset: torch.utils.data.Dataset,
+    batch_size: int = 8,
+    random_seed: int = 0,
+    valid_size: float = 0.1,
+    test_size: float = 0.1,
+    shuffle: bool = True,
+    num_workers: int = 1,
+    pin_memory: bool = True,
+    collate_fn: typing.Callable = custom_collate_alldata,
+) -> typing.Tuple[
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+]:
+    """
+    :param dataset: torch.utils.data.Dataset()
+        Dataset class e.g. SegDataset()
+    :param batch_size: int
+        Batch size for training. The loader provides batch_size number of samples for each training time step.
+    :param random_seed: int
+        For setting np.random.seed() for shuffling (if shuffle==True)
+    :param valid_size: float
+        Validation data ratio, should be <1.0
+    :param test_size: float
+        Test data ratio, should be <1.0
+    :param shuffle: bool
+        If set true, the data is shuffled before sampling
+    :param num_workers:: int
+        How many subprocesses to use for data loading. 0 means the data will be loaded in the main process only.
+    :param pin_memory: bool
+        Decided whether data loader should copy the Tensors into CUDA pinned memory.
+    :return:
+        train_loader, valid_loader, test_loader:
+        Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]
+        DataLoader for each sets of data.
+    """
+
+    # load dataset
+    # get train, validation and test samplers
+    train_sampler, valid_sampler, test_sampler = split(
+        dataset,
+        train=1.0 - valid_size - test_size,
+        valid=valid_size,
+        test=test_size,
+        shuffle=shuffle,
+        random_seed=random_seed,
+    )
+    LOGGER.info(
+        "Loading datasets: %d training images, %d validation images, %d test images with batch size %d",
+        len(train_sampler),
+        len(valid_sampler),
+        len(test_sampler),
+        batch_size,
+    )
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=train_sampler,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        collate_fn=collate_fn,
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=valid_sampler,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        collate_fn=collate_fn,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=1,
+        sampler=test_sampler,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        collate_fn=collate_fn,
+    )
+
+    return train_loader, valid_loader, test_loader
+

@@ -17,11 +17,16 @@ def train_model(
     input_height: int,
     input_width: int,
     net: torch.nn.Module,
-    data_loaders: typing.Tuple[
+    seg_data_loaders: typing.Tuple[
         torch.utils.data.DataLoader,
         torch.utils.data.DataLoader,
         torch.utils.data.DataLoader,
     ],
+    det_data_loaders: typing.Tuple[
+            torch.utils.data.DataLoader,
+            torch.utils.data.DataLoader,
+            torch.utils.data.DataLoader,
+        ],
 ):
     # load cuda
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -32,19 +37,22 @@ def train_model(
         SummaryWriter(tensorboard_dir) if tensorboard_dir else SummaryWriter()
     )
 
-    train_loader, valid_loader, test_loader = data_loaders
+    train_seg_loader, valid_seg_loader, test_seg_loader = seg_data_loaders
+    train_det_loader, valid_det_loader, test_det_loader = det_data_loaders
 
     net.to(device)
     summary(
         net,
         input_size=(3, input_height, input_width),
-        batch_size=train_loader.batch_size,
+        batch_size=train_seg_loader.batch_size,
         device=device.type,
     )
     trainer = Trainer(
         net=net,
-        train_loader=train_loader,
-        valid_loader=valid_loader,
+        train_seg_loader=train_seg_loader,
+        valid_seg_loader=valid_seg_loader,
+        train_det_loader=train_det_loader,
+        valid_det_loader=valid_det_loader,
         device=device,
         summary_writer=tensorboard_writer,
         model_output_path=model_output_dir,
