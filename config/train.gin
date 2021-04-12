@@ -14,6 +14,17 @@ INPUT_WIDTH = 640
 NUM_SEG_CLASSES = 3
 NUM_DET_CLASSES = 3
 
+NUM_EPOCHS = 100
+OPTIMIZER = @torch.optim.Adam
+BATCH_SIZE = 64
+LEARNING_RATE = 1e-03
+STEP_SIZE = 5
+PATIENCE = 5
+WEIGHT_DECAY = 0
+VALID_RATIO = 0.3
+TEST_RATIO = 0.2
+TRAIN_AND_EVALUATE = True
+
 RUN_NAME = "soccer-robot"
 WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
 
@@ -41,10 +52,10 @@ get_train_valid_test_loader.collate_fn=@custom_collate_alldata
 #get_train_valid_test_loader.collate_fn=@custom_collate_detection
 #get_train_valid_test_loader.dataset = %SEGMENTATION_DATASET
 #get_train_valid_test_loader.collate_fn=@custom_collate_segmentation
-get_train_valid_test_loader.batch_size = 32
+get_train_valid_test_loader.batch_size = %BATCH_SIZE
 get_train_valid_test_loader.random_seed = 39248
-get_train_valid_test_loader.valid_size = 0.3
-get_train_valid_test_loader.test_size = 0.2
+get_train_valid_test_loader.valid_size = %VALID_RATIO
+get_train_valid_test_loader.test_size = %TEST_RATIO
 get_train_valid_test_loader.num_workers = 0
 
 DATA_LOADERS = @get_train_valid_test_loader()
@@ -70,13 +81,13 @@ train_model.net = @NimbRoNet2()
 train_model.data_loaders = %DATA_LOADERS
 Trainer.seg_criterion = @torch.nn.CrossEntropyLoss()
 Trainer.det_criterion = @torch.nn.MSELoss()
-Trainer.optimizer_class = @torch.optim.Adam
-Trainer.lr_step_size = 5
-Trainer.lr = 1e-03
-Trainer.patience = 5
-Trainer.num_epochs = 100
-Trainer.weight_decay = 0.001
-Trainer.evaluate = False
+Trainer.optimizer_class = %OPTIMIZER
+Trainer.lr_step_size = %STEP_SIZE
+Trainer.lr = %LEARNING_RATE
+Trainer.patience = %PATIENCE
+Trainer.num_epochs = %NUM_EPOCHS
+Trainer.weight_decay = %WEIGHT_DECAY
+Trainer.evaluate = %TRAIN_AND_EVALUATE
 Trainer.run_name = %RUN_NAME
 Trainer.wandb_key = %WANDB_KEY
 
@@ -91,3 +102,19 @@ evaluate_model.visualize = True
 evaluate_model.data_loaders = %DATA_LOADERS
 evaluate_model.run_name = %RUN_NAME
 evaluate_model.wandb_key = %WANDB_KEY
+
+
+wandb_config = {'num_epochs':%NUM_EPOCHS,
+'optimizer_class': %OPTIMIZER,
+'batch_size': %BATCH_SIZE,
+'learning_rate': %LEARNING_RATE,
+'step': %STEP_SIZE,
+'patience' : %PATIENCE,
+'weight_decay': %WEIGHT_DECAY,
+'validation_ratio': %VALID_RATIO,
+'test_ratio': %TEST_RATIO,
+'Train_and_evaluate': %TRAIN_AND_EVALUATE,
+}
+Trainer.wandb_config = %wandb_config
+
+

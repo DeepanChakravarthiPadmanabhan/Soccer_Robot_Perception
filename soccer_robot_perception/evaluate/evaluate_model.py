@@ -151,39 +151,40 @@ def evaluate_model(
             det_out_tensor = torch.cat(det_out_collected, dim=0)
             det_loss = det_criterion(det_out_tensor, det_target_tensor)
 
-            ball_points = center_of_shape(det_out[0][0].detach().numpy(), 1)
-            robot_points = center_of_shape(det_out[0][1].detach().numpy(), 2)
-            goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 3)
+        ball_points = center_of_shape(det_out[0][0].detach().numpy(), 1)
+        robot_points = center_of_shape(det_out[0][1].detach().numpy(), 2)
+        goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 3)
 
-            # ball_points = [
-            #     [53.0, 91.0, 1.0],
-            #     [61, 81, 1],
-            #     [0, 19, 1],
-            # ]
-            #
-            # robot_points = [
-            #     [50, 50, 2],
-            #     [98.0, 12.0, 2.0],
-            #     [14.0, 65.0, 2.0],
-            #     [89.0, 87.0, 2.0],
-            # ]
+        # ball_points = [
+        #     [53.0, 91.0, 1.0],
+        #     [61, 81, 1],
+        #     [0, 19, 1],
+        # ]
+        #
+        # robot_points = [
+        #     [50, 50, 2],
+        #     [98.0, 12.0, 2.0],
+        #     [14.0, 65.0, 2.0],
+        #     [89.0, 87.0, 2.0],
+        # ]
 
-            # goalpost_points = [[13., 109., 3.],
-            #                      [13., 112., 3.],
-            #                      [13., 113., 3.],
-            #                      ]
-            # goalpost_points = []
+        # goalpost_points = [[13., 109., 3.],
+        #                      [13., 112., 3.],
+        #                      [13., 113., 3.],
+        #                      ]
+        # goalpost_points = []
 
-            blob_map = np.zeros(
-                (3, int(input_height / 4), int(input_width / 4))
-            )
-            ball_map = plot_blobs(ball_points, 6)
-            robot_map = plot_blobs(robot_points, 12)
-            goalpost_map = plot_blobs(goalpost_points, 6)
-            blob_map[0] = ball_map
-            blob_map[1] = robot_map
-            blob_map[2] = goalpost_map
+        blob_map = np.zeros(
+            (3, int(input_height / 4), int(input_width / 4))
+        )
+        ball_map = plot_blobs(ball_points, 6)
+        robot_map = plot_blobs(robot_points, 12)
+        goalpost_map = plot_blobs(goalpost_points, 6)
+        blob_map[0] = ball_map
+        blob_map[1] = robot_map
+        blob_map[2] = goalpost_map
 
+        if len(det_target_collected) != 0:
             (
                 tp,
                 fp,

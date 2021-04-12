@@ -41,6 +41,7 @@ class Trainer:
         model_output_path,
         device,
         wandb_key,
+        wandb_config,
         input_height: int,
         input_width: int,
         lr_step_size=5,
@@ -76,14 +77,7 @@ class Trainer:
 
         os.environ["WANDB_API_KEY"] = wandb_key
         os.environ["WANDB_NAME"] = run_name
-        config = dict(
-            num_epochs=self.num_epochs,
-            optimizer_class=optimizer_class,
-            step=lr_step_size,
-            weight_decay=self.weight_decay,
-            batch_size=len(self.train_loader.batch_sampler),
-        )
-        wandb.init(config=config, project='soccer-robot')
+        wandb.init(config=wandb_config, project='soccer-robot')
 
     def _sample_to_device(self, sample):
         device_sample = {}
