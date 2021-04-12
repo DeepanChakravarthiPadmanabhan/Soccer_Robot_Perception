@@ -25,6 +25,7 @@ WEIGHT_DECAY = 0
 VALID_RATIO = 0.3
 TEST_RATIO = 0.2
 TRAIN_AND_EVALUATE = True
+RESNET_BB_FIXED = False
 
 RUN_NAME = "soccer-robot"
 WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
@@ -65,6 +66,7 @@ DATA_LOADERS = @get_train_valid_test_loader()
 NimbRoNet2.input_width = %INPUT_WIDTH
 NimbRoNet2.input_height = %INPUT_HEIGHT
 NimbRoNet2.location_awareness = True
+NimbRoNet2.resnet_bb_fixed = %RESNET_BB_FIXED
 
 # DETECTION UTILS
 det_label_preprocessor.input_width = %INPUT_WIDTH
@@ -115,6 +117,7 @@ wandb_config = {'num_epochs':%NUM_EPOCHS,
 'validation_ratio': %VALID_RATIO,
 'test_ratio': %TEST_RATIO,
 'Train_and_evaluate': %TRAIN_AND_EVALUATE,
+'resnet_bb_fixed': %RESNET_BB_FIXED
 }
 Trainer.wandb_config = %wandb_config
 

@@ -13,11 +13,13 @@ from soccer_robot_perception.architectures.location_aware_conv2d import (
 
 @gin.configurable
 class NimbRoNet2(nn.Module):
-    def __init__(self, input_width, input_height, location_awareness):
+    def __init__(self, input_width=640, input_height=480, location_awareness=True, resnet_bb_fixed=True):
         super().__init__()
         res18_model = models.resnet18(pretrained=True)
-        for param in res18_model.parameters():
-            param.requires_grad = False
+
+        if resnet_bb_fixed:
+            for param in res18_model.parameters():
+                param.requires_grad = False
 
         location_bias = torch.nn.Parameter(torch.zeros(120, 160, 3))
         location_encoder = torch.autograd.Variable(torch.ones(120, 160, 3))
