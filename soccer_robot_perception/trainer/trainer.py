@@ -132,6 +132,8 @@ class Trainer:
         best_validation_loss = maxsize
         wandb.watch(self.net, log='all')
 
+        print(seg_train_len, bs_seg, det_train_len, bs_det)
+
         for epoch in range(self.num_epochs):
             start = time.time()
             self.net.train(True)
@@ -253,6 +255,8 @@ class Trainer:
         det_valid_len = len(self.valid_det_loader.batch_sampler)
         bs_det = len(self.valid_det_loader)
         bs_seg = len(self.valid_seg_loader)
+
+        print(seg_valid_len, bs_seg, det_valid_len, bs_det)
 
         self.net.train(False)
 
