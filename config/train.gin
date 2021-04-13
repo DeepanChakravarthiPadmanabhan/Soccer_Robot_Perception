@@ -93,7 +93,6 @@ det_label_preprocessor.large_variance = 12
 # Trainer
 train_model.input_width = %INPUT_WIDTH
 train_model.input_height = %INPUT_HEIGHT
-train_model.data_loaders = %DATA_LOADERS
 train_model.net = @NimbRoNet2()
 train_model.seg_data_loaders = %SEG_DATA_LOADERS
 train_model.det_data_loaders = %DET_DATA_LOADERS

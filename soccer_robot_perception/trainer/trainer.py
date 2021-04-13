@@ -140,19 +140,21 @@ class Trainer:
 
             total_det_loss = 0
             total_seg_loss = 0
-            for batch, data in enumerate(self.train_det_loader):
+            for _ in range(5):
+                for batch, data in enumerate(self.train_det_loader):
 
-                LOGGER.info("DET TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
-                data = self._sample_to_device(data)
+                    LOGGER.info("DET TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
+                    data = self._sample_to_device(data)
 
-                input_image = data["image"]
-                self.optimizer.zero_grad()
-                det_out, seg_out = self.net(input_image)
+                    input_image = data["image"]
+                    self.optimizer.zero_grad()
+                    det_out, seg_out = self.net(input_image)
 
-                det_loss = self.det_criterion(det_out, data["det_target"])
-                total_det_loss += det_loss
+                    det_loss = self.det_criterion(det_out, data["det_target"])
+                    total_det_loss += det_loss
 
 ##############################
+
             for batch, data in enumerate(self.train_seg_loader):
                 LOGGER.info("SEG TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
                 data = self._sample_to_device(data)
@@ -207,8 +209,8 @@ class Trainer:
             wandb.log({"train_loss": av_train_loss, "validation_loss": av_valid_loss}, step=epoch + 1)
             LOGGER.info("Current epoch completed in %f s", time.time() - start)
 
-            if av_valid_loss < best_validation_loss and model_path and best_model_path:
-            #if True:
+            #if av_valid_loss < best_validation_loss and model_path and best_model_path:
+            if True:
                 best_validation_loss = av_valid_loss
                 best_model_path = model_path
                 LOGGER.info(
@@ -290,6 +292,6 @@ class Trainer:
         )
         av_loss += loss.item() / self.loss_scale
 
-        av_valid_loss = av_loss / (seg_valid_len + det_valid_len)
-        # av_valid_loss = 0
+        #av_valid_loss = av_loss / (seg_valid_len + det_valid_len)
+        av_valid_loss = 0
         return av_valid_loss
