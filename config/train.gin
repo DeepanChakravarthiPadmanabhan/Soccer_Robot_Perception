@@ -58,7 +58,7 @@ DET_DATA_LOADERS = @get_train_valid_test_loader_det()
 
 get_train_valid_test_loader_seg.dataset = %SEGMENTATION_DATASET
 get_train_valid_test_loader_seg.collate_fn=@custom_collate_segmentation
-get_train_valid_test_loader_seg.batch_size = 16
+get_train_valid_test_loader_seg.batch_size = 8
 get_train_valid_test_loader_seg.random_seed = 123
 get_train_valid_test_loader_seg.valid_size = %VALID_RATIO
 get_train_valid_test_loader_seg.test_size = %TEST_RATIO
