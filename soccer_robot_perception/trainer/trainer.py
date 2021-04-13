@@ -251,21 +251,21 @@ class Trainer:
         LOGGER.info("Validation Module")
         seg_valid_len = len(self.valid_seg_loader.batch_sampler)
         det_valid_len = len(self.valid_det_loader.batch_sampler)
-        bs_det = len(self.train_det_loader)
-        bs_seg = len(self.train_seg_loader)
+        bs_det = len(self.valid_det_loader)
+        bs_seg = len(self.valid_seg_loader)
 
         self.net.train(False)
 
         av_loss = 0.0
 
-        for batch, det_data in enumerate(self.train_det_loader):
+        for batch, det_data in enumerate(self.valid_det_loader):
             LOGGER.info("Validation Module")
             if batch < bs_seg:
                 det_data = self._sample_to_device(det_data)
                 input_image = det_data["image"]
                 det_out, seg_out = self.net(input_image)
                 det_loss = self.det_criterion(det_out, det_data["det_target"])
-                seg_data = next(iter(self.train_seg_loader))
+                seg_data = next(iter(self.valid_seg_loader))
                 seg_data = self._sample_to_device(seg_data)
                 input_image = seg_data["image"]
                 det_out, seg_out = self.net(input_image)
