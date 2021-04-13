@@ -148,9 +148,8 @@ class Trainer:
             running_regression_loss = 0.0
 
             for batch, det_data in enumerate(self.train_det_loader):
-                LOGGER.info("TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
-
                 if batch < bs_seg:
+                    LOGGER.info("TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
                     self.optimizer.zero_grad()
@@ -200,7 +199,7 @@ class Trainer:
                 self.scheduler.step()
 
             # output training loss
-            av_train_loss = av_loss / det_train_len
+            av_train_loss = av_loss / bs_seg
 
             LOGGER.info(
                 "TRAIN: epoch: %d, average loss: %f",
@@ -290,6 +289,6 @@ class Trainer:
                     )
                     av_loss += loss.item() / self.loss_scale
 
-        av_valid_loss = av_loss / det_valid_len
+        av_valid_loss = av_loss / bs_seg
         # av_valid_loss = 0
         return av_valid_loss
