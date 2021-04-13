@@ -140,18 +140,21 @@ class Trainer:
 
             total_det_loss = 0
             total_seg_loss = 0
-            for _ in range(5):
-                for batch, data in enumerate(self.train_det_loader):
 
-                    LOGGER.info("DET TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
-                    data = self._sample_to_device(data)
+            for batch, data in enumerate(self.train_det_loader):
 
-                    input_image = data["image"]
-                    self.optimizer.zero_grad()
-                    det_out, seg_out = self.net(input_image)
+                LOGGER.info("DET TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
+                data = self._sample_to_device(data)
 
-                    det_loss = self.det_criterion(det_out, data["det_target"])
-                    total_det_loss += det_loss
+                input_image = data["image"]
+                self.optimizer.zero_grad()
+                det_out, seg_out = self.net(input_image)
+                det_loss = self.det_criterion(det_out, data["det_target"])
+                total_det_loss += det_loss
+                loss = det_loss
+                loss.backward()
+                self.optimizer.step()
+
 
 ##############################
 
@@ -160,32 +163,31 @@ class Trainer:
                 data = self._sample_to_device(data)
 
                 input_image = data["image"]
-
+                self.optimizer.zero_grad()
                 det_out, seg_out = self.net(input_image)
-
                 seg_tv_loss = compute_total_variation_loss(seg_out)
                 seg_loss = (
                         self.seg_criterion(seg_out, data["seg_target"].long())
                         + seg_tv_loss
                 )
                 total_seg_loss += seg_loss
+                loss = seg_loss
+                loss.backward()
+                self.optimizer.step()
 ###############################
 
-            loss = total_det_loss + total_seg_loss
+            final_loss = total_det_loss + total_seg_loss
 
             LOGGER.info(
                 "epoch: %d, loss: %f, seg_loss: %f, det_loss: %f ",
                 self.current_epoch,
-                loss.item(),
+                final_loss.item(),
                 total_seg_loss.item(),
                 total_det_loss.item(),
             )
 
-            loss.backward()
 
-            self.optimizer.step()
-
-            av_loss += loss.item() / self.loss_scale
+            av_loss += final_loss.item() / self.loss_scale
 
             if self.scheduler:
                 self.scheduler.step()

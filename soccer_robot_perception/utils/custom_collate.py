@@ -43,17 +43,17 @@ def custom_collate_detection(
     :return: batch as dictionary to tensors or lists of tensors
     """
 
-    box_coordinates_list = []
+    #box_coordinates_list = []
     class_list = []
     blob_centers_list = []
 
     for element in batch:
-        box_coordinates_list.append(element.pop("det_boxcord"))
+        #box_coordinates_list.append(element.pop("det_boxcord"))
         class_list.append(element.pop("det_class"))
         blob_centers_list.append(element.pop("blob_centers"))
 
     batch = default_collate(batch)
-    batch["det_boxcord"] = box_coordinates_list
+    #batch["det_boxcord"] = box_coordinates_list
     batch["det_class"] = class_list
     batch["blob_centers"] = blob_centers_list
 
@@ -76,7 +76,7 @@ def custom_collate_alldata(
     :param groundtruth: flag if groundtruth is present in batch or not
     :return: batch as dictionary to tensors or lists of tensors
     """
-    box_coordinates_list = []
+    #box_coordinates_list = []
     class_list = []
     blob_centers_list = []
     det_target_list = []
@@ -86,7 +86,7 @@ def custom_collate_alldata(
         # Clean Detection Dataset
 
         if element["dataset_class"] == "detection":
-            box_coordinates_list.append(element.pop("det_boxcord"))
+            #box_coordinates_list.append(element.pop("det_boxcord"))
             class_list.append(element.pop("det_class"))
             blob_centers_list.append(element.pop("blob_centers"))
             det_target_list.append(element.pop("det_target"))
@@ -94,7 +94,7 @@ def custom_collate_alldata(
 
         # Clean Segmentation Dataset
         if element["dataset_class"] == "segmentation":
-            box_coordinates_list.append([])
+            #box_coordinates_list.append([])
             class_list.append([])
             blob_centers_list.append([])
             det_target_list.append([])
@@ -102,7 +102,7 @@ def custom_collate_alldata(
             seg_target_list.append(element.pop("seg_target"))
 
     batch = default_collate(batch)
-    batch["det_boxcord"] = box_coordinates_list
+    #batch["det_boxcord"] = box_coordinates_list
     batch["det_class"] = class_list
     batch["blob_centers"] = blob_centers_list
     batch["det_target"] = det_target_list

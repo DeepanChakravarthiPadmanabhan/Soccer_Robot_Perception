@@ -127,6 +127,7 @@ class ToTensor(object):
             sample["blob_centers"] = torch.tensor(blob_centers, dtype=torch.float)
 
             sample["det_class"] = torch.tensor(sample["det_class"], dtype=torch.int)
+            sample.pop("det_boxcord")
 
         image = sample["image"]
         image = torch.from_numpy(image).float()
