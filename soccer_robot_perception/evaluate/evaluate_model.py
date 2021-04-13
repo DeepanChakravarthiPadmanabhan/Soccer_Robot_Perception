@@ -138,9 +138,8 @@ def evaluate_model(
     example = 0
 
     for loader in test_loader_list:
-        example += 1
-
         for data in loader:
+            example += 1
             LOGGER.info("Predicting on image: %d", example)
 
             input_image = data["image"]
@@ -344,7 +343,7 @@ def evaluate_model(
                 plt.subplot(233)
                 plt.imshow((torch.argmax(seg_out, dim=1)[0].detach().numpy()), cmap="gray")
                 plt.title("Seg out")
-                if (data["dataset_class"]) == "detection":
+                if (data["dataset_class"][0]) == "detection":
                     plt.subplot(234)
                     plt.imshow((data["det_target"][0].detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
                     plt.title("Det tar")
@@ -352,7 +351,7 @@ def evaluate_model(
                     plt.subplot(234)
                     plt.imshow(np.zeros((120, 160)), cmap='gray')
                     plt.title("Det tar")
-                if (data["dataset_class"]) == "segmentation":
+                if (data["dataset_class"][0]) == "segmentation":
                     plt.subplot(235)
                     plt.imshow(data["seg_target"][0].numpy(), cmap="gray")
                     plt.title("Seg tar")

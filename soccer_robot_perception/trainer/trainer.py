@@ -16,7 +16,7 @@ from soccer_robot_perception.evaluate.evaluate_model import evaluate_model
 
 from soccer_robot_perception.utils.segmentation_utils import (
     total_variation_loss,
-    compute_total_variation_loss,
+    compute_total_variation_loss_seg, compute_total_variation_loss_det
 )
 
 import wandb
@@ -69,18 +69,18 @@ class Trainer:
         self.seg_criterion = seg_criterion
         self.det_criterion = det_criterion
         self.optimizer = optimizer_class([
-            {"params": self.net.encoder_block1.parameters(), "lr": 0.0001},
-            {"params": self.net.encoder_block2.parameters(), "lr": 0.0001},
-            {"params": self.net.encoder_block3.parameters(), "lr": 0.0001},
-            {"params": self.net.encoder_block4.parameters(), "lr": 0.0001},
-            {"params": self.net.decoder_block1.parameters(), "lr": 0.0001},
-            {"params": self.net.decoder_block2.parameters(), "lr": 0.0001},
-            {"params": self.net.decoder_block3.parameters(), "lr": 0.0001},
-            {"params": self.net.segmentation_head.parameters(), "lr": 0.001},
-            {"params": self.net.detection_head.parameters(), "lr": 0.001},
-            {"params": self.net.conv1x1_1.parameters(), "lr": 0.01},
-            {"params": self.net.conv1x1_2.parameters(), "lr": 0.01},
-            {"params": self.net.conv1x1_3.parameters(), "lr": 0.01},
+            {"params": self.net.encoder_block1.parameters(), "lr": 0.00001},
+            {"params": self.net.encoder_block2.parameters(), "lr": 0.00001},
+            {"params": self.net.encoder_block3.parameters(), "lr": 0.00001},
+            {"params": self.net.encoder_block4.parameters(), "lr": 0.00001},
+            {"params": self.net.decoder_block1.parameters(), "lr": 0.00001},
+            {"params": self.net.decoder_block2.parameters(), "lr": 0.00001},
+            {"params": self.net.decoder_block3.parameters(), "lr": 0.00001},
+            {"params": self.net.segmentation_head.parameters(), "lr": self.lr},
+            {"params": self.net.detection_head.parameters(), "lr": self.lr},
+            {"params": self.net.conv1x1_1.parameters(), "lr": self.lr},
+            {"params": self.net.conv1x1_2.parameters(), "lr": self.lr},
+            {"params": self.net.conv1x1_3.parameters(), "lr": self.lr},
         ])
         self.scheduler = StepLR(self.optimizer, step_size=lr_step_size, gamma=0.1)
         self.tensorboard_writer = summary_writer
@@ -145,25 +145,24 @@ class Trainer:
 
             for batch, det_data in enumerate(self.train_det_loader):
                 if batch < seg_train_len:
-                    LOGGER.info("TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
                     self.optimizer.zero_grad()
                     det_out, seg_out = self.net(input_image)
-                    det_loss = self.det_criterion(det_out, det_data["det_target"])
+                    det_tv_loss = compute_total_variation_loss_det(det_out)
+                    det_loss = det_tv_loss + self.det_criterion(det_out, det_data["det_target"])
                     seg_data = next(iter(self.train_seg_loader))
                     seg_data = self._sample_to_device(seg_data)
                     input_image = seg_data["image"]
                     det_out, seg_out = self.net(input_image)
-                    seg_tv_loss = compute_total_variation_loss(seg_out)
+                    seg_tv_loss = compute_total_variation_loss_seg(seg_out)
                     seg_loss = (
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
                             + seg_tv_loss
                     )
-
                     loss = det_loss + seg_loss
                     LOGGER.info(
-                        "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                        "TRAINING - epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
                         self.current_epoch,
                         batch + 1,
                         loss.item(),
@@ -182,7 +181,7 @@ class Trainer:
 
                     if batch % sample_size == (sample_size - 1):
                         LOGGER.info(
-                            "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                            "TRAINING - epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
                             self.current_epoch,
                             batch + 1,
                             running_loss / sample_size,
@@ -198,7 +197,7 @@ class Trainer:
             av_train_loss = av_loss / seg_train_len
 
             LOGGER.info(
-                "TRAIN: epoch: %d, average loss: %f",
+                "TRAIN - epoch: %d, average loss: %f",
                 epoch + 1,
                 av_train_loss,
             )
@@ -206,7 +205,7 @@ class Trainer:
             av_valid_loss = self.validation()
 
             LOGGER.info(
-                "VALIDATION: epoch: %d, average validation loss: %f",
+                "VALIDATION - epoch: %d, average validation loss: %f",
                 epoch + 1,
                 av_valid_loss,
             )
@@ -259,20 +258,20 @@ class Trainer:
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
                     det_out, seg_out = self.net(input_image)
-                    det_loss = self.det_criterion(det_out, det_data["det_target"])
+                    det_tv_loss = compute_total_variation_loss_det(det_out)
+                    det_loss = det_tv_loss + self.det_criterion(det_out, det_data["det_target"])
                     seg_data = next(iter(self.valid_seg_loader))
                     seg_data = self._sample_to_device(seg_data)
                     input_image = seg_data["image"]
                     det_out, seg_out = self.net(input_image)
-                    seg_tv_loss = compute_total_variation_loss(seg_out)
+                    seg_tv_loss = compute_total_variation_loss_seg(seg_out)
                     seg_loss = (
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
                             + seg_tv_loss
                     )
-
                     loss = seg_loss + det_loss
                     LOGGER.info(
-                        "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                        "VALIDATION - epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
                         self.current_epoch,
                         batch + 1,
                         loss.item(),

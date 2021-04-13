@@ -17,7 +17,8 @@ NUM_DET_CLASSES = 3
 # TRAINER DETAILS FOR WANDB CONFIG AND TRAINER CONFIG
 NUM_EPOCHS = 100
 OPTIMIZER = @torch.optim.Adam
-BATCH_SIZE = 64
+DET_BATCH_SIZE = 32
+SEG_BATCH_SIZE = 8
 LEARNING_RATE = 1e-03
 STEP_SIZE = 5
 PATIENCE = 5
@@ -27,7 +28,7 @@ TEST_RATIO = 0.2
 TRAIN_AND_EVALUATE = True
 RESNET_BB_FIXED = False
 
-RUN_NAME = "soccer-robot-no overfit"
+RUN_NAME = "soccer-robot"
 WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
 
 # Data transformation
@@ -49,7 +50,7 @@ SEGMENTATION_DATASET = @SegmentationDataset()
 # DataLoader
 get_train_valid_test_loader_det.dataset = %DETECTION_DATASET
 get_train_valid_test_loader_det.collate_fn=@custom_collate_detection
-get_train_valid_test_loader_det.batch_size = 32
+get_train_valid_test_loader_det.batch_size = %DET_BATCH_SIZE
 get_train_valid_test_loader_det.random_seed = 39248
 get_train_valid_test_loader_det.valid_size = %VALID_RATIO
 get_train_valid_test_loader_det.test_size = %TEST_RATIO
@@ -58,8 +59,8 @@ DET_DATA_LOADERS = @get_train_valid_test_loader_det()
 
 get_train_valid_test_loader_seg.dataset = %SEGMENTATION_DATASET
 get_train_valid_test_loader_seg.collate_fn=@custom_collate_segmentation
-get_train_valid_test_loader_seg.batch_size = 8
-get_train_valid_test_loader_seg.random_seed = 123
+get_train_valid_test_loader_seg.batch_size = %SEG_BATCH_SIZE
+get_train_valid_test_loader_seg.random_seed = 39248
 get_train_valid_test_loader_seg.valid_size = %VALID_RATIO
 get_train_valid_test_loader_seg.test_size = %TEST_RATIO
 get_train_valid_test_loader_seg.num_workers = 0
@@ -115,7 +116,8 @@ evaluate_model.wandb_key = %WANDB_KEY
 
 wandb_config = {'num_epochs':%NUM_EPOCHS,
 'optimizer_class': %OPTIMIZER,
-'batch_size': %BATCH_SIZE,
+'det_batch_size': %DET_BATCH_SIZE,
+'seg_batch_size': %SEG_BATCH_SIZE,
 'learning_rate': %LEARNING_RATE,
 'step': %STEP_SIZE,
 'patience' : %PATIENCE,

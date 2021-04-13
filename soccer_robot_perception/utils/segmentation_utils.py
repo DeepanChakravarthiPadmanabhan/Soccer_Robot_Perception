@@ -114,7 +114,7 @@ def total_variation_loss(img: torch.tensor, weight: int = 1):
     return tv_loss
 
 
-def compute_total_variation_loss(img):
+def compute_total_variation_loss_seg(img):
     img_bg = img[:, 0, :, :]
     img_bg.unsqueeze_(1)
     img_field = img[:, 1, :, :]
@@ -122,4 +122,17 @@ def compute_total_variation_loss(img):
     tv_bg = total_variation_loss(img_bg)
     tv_field = total_variation_loss(img_field)
     tv_loss = tv_bg + tv_field
+    return tv_loss
+
+def compute_total_variation_loss_det(img):
+    img_1 = img[:, 0, :, :]
+    img_1.unsqueeze_(1)
+    img_2 = img[:, 1, :, :]
+    img_2.unsqueeze_(1)
+    img_3 = img[:, 2, :, :]
+    img_3.unsqueeze_(1)
+    tv_1 = total_variation_loss(img_1)
+    tv_2 = total_variation_loss(img_2)
+    tv_3 = total_variation_loss(img_3)
+    tv_loss = tv_1 + tv_2 + tv_3
     return tv_loss
