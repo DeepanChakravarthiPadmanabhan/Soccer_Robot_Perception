@@ -164,35 +164,35 @@ class Trainer:
                             + seg_tv_loss
                     )
 
-                loss = det_loss + seg_loss
-                LOGGER.info(
-                    "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
-                    self.current_epoch,
-                    batch + 1,
-                    loss.item(),
-                    seg_loss.item(),
-                    det_loss.item(),
-                )
-
-                loss.backward()
-
-                self.optimizer.step()
-
-                av_loss += loss.item() / self.loss_scale
-                running_loss += loss.item() / self.loss_scale
-                running_segment_loss += seg_loss.item() / self.loss_scale
-                running_regression_loss += det_loss.item() / self.loss_scale
-
-                if batch % sample_size == (sample_size - 1):
+                    loss = det_loss + seg_loss
                     LOGGER.info(
                         "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
                         self.current_epoch,
                         batch + 1,
-                        running_loss / sample_size,
-                        running_segment_loss / sample_size,
-                        running_regression_loss / sample_size,
+                        loss.item(),
+                        seg_loss.item(),
+                        det_loss.item(),
                     )
-                    running_loss = 0.0
+
+                    loss.backward()
+
+                    self.optimizer.step()
+
+                    av_loss += loss.item() / self.loss_scale
+                    running_loss += loss.item() / self.loss_scale
+                    running_segment_loss += seg_loss.item() / self.loss_scale
+                    running_regression_loss += det_loss.item() / self.loss_scale
+
+                    if batch % sample_size == (sample_size - 1):
+                        LOGGER.info(
+                            "epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
+                            self.current_epoch,
+                            batch + 1,
+                            running_loss / sample_size,
+                            running_segment_loss / sample_size,
+                            running_regression_loss / sample_size,
+                        )
+                        running_loss = 0.0
 
             if self.scheduler:
                 self.scheduler.step()
