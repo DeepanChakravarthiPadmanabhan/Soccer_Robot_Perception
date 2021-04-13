@@ -326,7 +326,7 @@ def evaluate_model(
             loss = seg_loss + det_loss
             LOGGER.info(
                 "image: %d, loss: %f, segment loss: %f, regression loss: %f",
-                len(df_micro),
+                example,
                 loss.item(),
                 seg_loss.item(),
                 det_loss.item(),

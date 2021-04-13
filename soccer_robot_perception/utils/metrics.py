@@ -163,11 +163,7 @@ def calculate_det_metrics(predicted_points, gt_blob_centers, name):
     fn = 0
 
     gt_blob_centers = gt_blob_centers.numpy()
-    gather_idx = np.where(gt_blob_centers[:, 2] == name)[0]
-    gather_data = []
-    for i in gather_idx:
-        gather_data.append(list(gt_blob_centers[i]))
-
+    gather_data = gt_blob_centers[gt_blob_centers[:, 2] == name]
     actual = np.zeros((len(gather_data)))
     predicted = np.ones((len(predicted_points)))
 
