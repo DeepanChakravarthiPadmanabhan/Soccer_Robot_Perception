@@ -27,7 +27,7 @@ TEST_RATIO = 0.2
 TRAIN_AND_EVALUATE = True
 RESNET_BB_FIXED = False
 
-RUN_NAME = "soccer-robot"
+RUN_NAME = "soccer-robot-no overfit"
 WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
 
 # Data transformation
