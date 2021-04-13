@@ -124,15 +124,11 @@ class Trainer:
         patience_count = self.patience
         det_train_len = len(self.train_det_loader.batch_sampler)
         seg_train_len = len(self.train_seg_loader.batch_sampler)
-        bs_det = len(self.train_det_loader)
-        bs_seg = len(self.train_seg_loader)
 
         LOGGER.info("Ready to start training")
         tic = timeit.default_timer()
         best_validation_loss = maxsize
         wandb.watch(self.net, log='all')
-
-        print(seg_train_len, bs_seg, det_train_len, bs_det)
 
         for epoch in range(self.num_epochs):
             start = time.time()
@@ -148,7 +144,7 @@ class Trainer:
             running_regression_loss = 0.0
 
             for batch, det_data in enumerate(self.train_det_loader):
-                if batch < bs_seg:
+                if batch < seg_train_len:
                     LOGGER.info("TRAINING: batch %d of epoch %d", batch + 1, epoch + 1)
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
@@ -199,7 +195,7 @@ class Trainer:
                 self.scheduler.step()
 
             # output training loss
-            av_train_loss = av_loss / bs_seg
+            av_train_loss = av_loss / seg_train_len
 
             LOGGER.info(
                 "TRAIN: epoch: %d, average loss: %f",
@@ -217,8 +213,8 @@ class Trainer:
             wandb.log({"train_loss": av_train_loss, "validation_loss": av_valid_loss}, step=epoch + 1)
             LOGGER.info("Current epoch completed in %f s", time.time() - start)
 
-            #if av_valid_loss < best_validation_loss and model_path and best_model_path:
-            if True:
+            if av_valid_loss < best_validation_loss and model_path and best_model_path:
+            # if True:
                 best_validation_loss = av_valid_loss
                 best_model_path = model_path
                 LOGGER.info(
@@ -252,10 +248,6 @@ class Trainer:
         LOGGER.info("Validation Module")
         seg_valid_len = len(self.valid_seg_loader.batch_sampler)
         det_valid_len = len(self.valid_det_loader.batch_sampler)
-        bs_det = len(self.valid_det_loader)
-        bs_seg = len(self.valid_seg_loader)
-
-        print(seg_valid_len, bs_seg, det_valid_len, bs_det)
 
         self.net.train(False)
 
@@ -263,7 +255,7 @@ class Trainer:
 
         with torch.no_grad():
             for batch, det_data in enumerate(self.valid_det_loader):
-                if batch < bs_seg:
+                if batch < seg_valid_len:
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
                     det_out, seg_out = self.net(input_image)
@@ -289,6 +281,6 @@ class Trainer:
                     )
                     av_loss += loss.item() / self.loss_scale
 
-        av_valid_loss = av_loss / bs_seg
+        av_valid_loss = av_loss / seg_valid_len
         # av_valid_loss = 0
         return av_valid_loss
