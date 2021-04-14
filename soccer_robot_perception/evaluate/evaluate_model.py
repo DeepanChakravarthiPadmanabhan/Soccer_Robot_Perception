@@ -133,7 +133,7 @@ def evaluate_model(
     df_det_robot = pd.DataFrame(columns=df_det_columns)
     df_det_goalpost = pd.DataFrame(columns=df_det_columns)
 
-    test_loader_list = [test_seg_loader, test_det_loader]
+    test_loader_list = [test_det_loader, test_seg_loader]
 
     example = 0
 
@@ -365,7 +365,7 @@ def evaluate_model(
                 plt.savefig(
                     report_output_path
                     + "/output_images/"
-                    + str(len(df_micro) + 1)
+                    + str(example)
                     + "_pred.jpg"
                 )
                 plt.close()

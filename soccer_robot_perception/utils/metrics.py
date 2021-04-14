@@ -112,50 +112,6 @@ def calculate_iou(target_img, input_img):
         max=1.0,
     )
 
-
-def calculate_det_metrics_old(predicted_points, gt_blob_centers, name):
-    tp = 0
-    tn = 0
-    fp = 0
-    fn = 0
-
-    gt_blob_centers = gt_blob_centers.numpy()
-    gather_idx = np.where(gt_blob_centers[:, 2] == name)[0]
-    gather_data = []
-    for i in gather_idx:
-        gather_data.append(list(gt_blob_centers[i]))
-
-    flag = np.zeros((len(gather_data)))
-    for i in predicted_points:
-        count = -1
-        for j in gather_data:
-            object_detected = False
-            if i[0] > 0 and i[1] > 0:
-                object_detected = True
-
-            if object_detected:
-                distance_ = distance.euclidean(j, i)
-                if distance_ < 4:
-                    tp += 1
-                    count = 1
-                    break
-        if count == -1:
-            fp += 1
-        else:
-            flag[count] = 1
-
-    if len(predicted_points) == 0 and (not np.any(np.array(gather_data))):
-        tn += 1
-    fn = np.count_nonzero(flag)
-
-    print("Metrics: ", tp, tn, fp, fn)
-    print("Predicted point: ", predicted_points)
-    print("Gathered point: ", gather_data)
-    print("Haha")
-
-    return 0, 0, 0, 0, 0
-
-
 def calculate_det_metrics(predicted_points, gt_blob_centers, name):
     tp = 0
     tn = 0
@@ -163,7 +119,10 @@ def calculate_det_metrics(predicted_points, gt_blob_centers, name):
     fn = 0
 
     gt_blob_centers = gt_blob_centers.numpy()
-    gather_data = gt_blob_centers[gt_blob_centers[:, 2] == name]
+    if len(gt_blob_centers.shape) == 2:
+        gather_data = gt_blob_centers[gt_blob_centers[:, 2] == name]
+    else:
+        gather_data = np.array([])
     actual = np.zeros((len(gather_data)))
     predicted = np.ones((len(predicted_points)))
 
