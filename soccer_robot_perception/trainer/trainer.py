@@ -4,6 +4,7 @@ import logging
 import gin
 import typing
 import matplotlib.pyplot as plt
+import numpy as np
 from sys import maxsize
 import cv2
 import wandb
@@ -14,10 +15,13 @@ from torch.optim.lr_scheduler import StepLR
 import time
 import git
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 from soccer_robot_perception.evaluate.evaluate_model import evaluate_model
 
 from soccer_robot_perception.utils.segmentation_utils import compute_total_variation_loss_seg
-from soccer_robot_perception.utils.detection_utils import compute_total_variation_loss_det
+from soccer_robot_perception.utils.detection_utils import compute_total_variation_loss_det, det_image_processor_wandb
 
 
 LOGGER = logging.getLogger(__name__)
@@ -73,6 +77,11 @@ class Trainer:
         self.det_criterion = det_criterion
         self.seg_tvl_weight = seg_tvl_weight
         self.det_tvl_weight = det_tvl_weight
+
+        sharer = [self.net.segmentation_head, self.net.detection_head]
+        self.shared_param = set()
+        for netpart in sharer:
+            self.shared_param |= set(netpart.parameters())
         self.optimizer = optimizer_class([
             {"params": self.net.encoder_block1.parameters(), "lr": 0.00001},
             {"params": self.net.encoder_block2.parameters(), "lr": 0.00001},
@@ -81,8 +90,7 @@ class Trainer:
             {"params": self.net.decoder_block1.parameters(), "lr": self.lr},
             {"params": self.net.decoder_block2.parameters(), "lr": self.lr},
             {"params": self.net.decoder_block3.parameters(), "lr": self.lr},
-            {"params": self.net.segmentation_head.parameters(), "lr": self.lr},
-            {"params": self.net.detection_head.parameters(), "lr": self.lr},
+            {"params": list(self.shared_param), "lr": self.lr},
             {"params": self.net.conv1x1_1.parameters(), "lr": self.lr},
             {"params": self.net.conv1x1_2.parameters(), "lr": self.lr},
             {"params": self.net.conv1x1_3.parameters(), "lr": self.lr},
@@ -150,6 +158,8 @@ class Trainer:
 
             running_loss = 0.0
             av_loss = 0.0
+            av_seg_loss = 0.0
+            av_det_loss = 0.0
             running_segment_loss = 0.0
             running_regression_loss = 0.0
 
@@ -158,13 +168,13 @@ class Trainer:
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
                     self.optimizer.zero_grad()
-                    det_out, seg_out = self.net(input_image)
+                    det_out, _ = self.net(input_image)
                     det_tv_loss = compute_total_variation_loss_det(det_out, self.det_tvl_weight)
                     det_loss = det_tv_loss + self.det_criterion(det_out, det_data["det_target"])
                     seg_data = next(iter(self.train_seg_loader))
                     seg_data = self._sample_to_device(seg_data)
                     input_image = seg_data["image"]
-                    det_out, seg_out = self.net(input_image)
+                    _, seg_out = self.net(input_image)
                     seg_tv_loss = compute_total_variation_loss_seg(seg_out, self.seg_tvl_weight)
                     seg_loss = (
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
@@ -185,6 +195,8 @@ class Trainer:
                     self.optimizer.step()
 
                     av_loss += loss.item() / self.loss_scale
+                    av_seg_loss += seg_loss.item() / self.loss_scale
+                    av_det_loss += det_loss.item() / self.loss_scale
                     running_loss += loss.item() / self.loss_scale
                     running_segment_loss += seg_loss.item() / self.loss_scale
                     running_regression_loss += det_loss.item() / self.loss_scale
@@ -200,26 +212,47 @@ class Trainer:
                         )
                         running_loss = 0.0
 
+            fig1 = det_image_processor_wandb(det_data["image"][0], det_out[0], det_data["det_target"][0])
+            fig2 = det_image_processor_wandb(det_data["image"][1], det_out[1], det_data["det_target"][1])
+            fig3 = det_image_processor_wandb(det_data["image"][2], det_out[2], det_data["det_target"][2])
+            fig4 = det_image_processor_wandb(det_data["image"][3], det_out[3], det_data["det_target"][3])
+
             if self.scheduler:
                 self.scheduler.step()
 
             # output training loss
             av_train_loss = av_loss / seg_train_len
+            av_train_seg_loss = av_seg_loss / seg_train_len
+            av_train_det_loss = av_det_loss / seg_train_len
 
             LOGGER.info(
-                "TRAIN - epoch: %d, average loss: %f",
+                "TRAIN - epoch: %d, average loss: %f, average seg loss: %f, average det loss: %f",
                 epoch + 1,
                 av_train_loss,
+                av_train_seg_loss,
+                av_train_det_loss,
             )
 
-            av_valid_loss = self.validation()
+            av_valid_loss, av_valid_seg_loss, av_valid_det_loss = self.validation()
 
             LOGGER.info(
                 "VALIDATION - epoch: %d, average validation loss: %f",
                 epoch + 1,
                 av_valid_loss,
             )
-            wandb.log({"train_loss": av_train_loss, "validation_loss": av_valid_loss}, step=epoch + 1)
+
+            wandb.log({
+                "Ex1": [
+                    wandb.Image(fig1, caption="Det out 1")],
+                "Ex2": [
+                    wandb.Image(fig2, caption="Det out 2")],
+                "Ex3": [
+                    wandb.Image(fig3, caption="Det out 3")],
+                "Ex4": [
+                    wandb.Image(fig4, caption="Det out 4")],
+                "train_loss": av_train_loss, "validation_loss": av_valid_loss, "train_seg_loss": av_train_seg_loss,
+                "train_det_loss": av_train_det_loss, "valid_seg_loss": av_valid_seg_loss,
+                "valid_det_loss": av_valid_det_loss}, step=epoch + 1)
             LOGGER.info("Current epoch completed in %f s", time.time() - start)
 
             if av_valid_loss < best_validation_loss and model_path and best_model_path:
@@ -261,6 +294,8 @@ class Trainer:
         self.net.train(False)
 
         av_loss = 0.0
+        av_seg_loss = 0.0
+        av_det_loss = 0.0
 
         with torch.no_grad():
             for batch, det_data in enumerate(self.valid_det_loader):
@@ -289,7 +324,11 @@ class Trainer:
                         det_loss.item(),
                     )
                     av_loss += loss.item() / self.loss_scale
+                    av_seg_loss += seg_loss.item() / self.loss_scale
+                    av_det_loss += det_loss.item() / self.loss_scale
 
         av_valid_loss = av_loss / seg_valid_len
+        av_valid_seg_loss = av_seg_loss / seg_valid_len
+        av_valid_det_loss = av_det_loss / seg_valid_len
         # av_valid_loss = 0
-        return av_valid_loss
+        return av_valid_loss, av_valid_seg_loss, av_valid_det_loss

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import gin
+import typing
 import torch
 import imutils
 from scipy.stats import multivariate_normal
@@ -120,24 +121,23 @@ def det_label_preprocessor(
     label_mask_shrinked[0] = ball_map
     label_mask_shrinked[1] = robot_map
     label_mask_shrinked[2] = goalpost_map
-    #plt.imshow((np.transpose(label_mask_shrinked, (1, 2, 0)) * 255).astype(np.uint8))
-    #plt.show()
     label_mask_shrinked = torch.tensor(label_mask_shrinked, dtype=torch.float)
     return label_mask_shrinked, blob_centers
 
 
-def center_of_shape(image, name):
+def center_of_shape(image: np.ndarray, name: int):
     """
     To find centers of the contours in the input image.
 
-    Args:
-    image: Image of which we want to find the contours.
+    :param image: Image to find the contours.
+    :param name: Integer denoting the classes - 1: ball, 2: robot, 3: goalpost
 
-    Returns: Array of centers of all the contours in the input image.
+    :return:
+    out_centers: All contour centers in the input image.
     """
-    out_centers = []
-    blurred = cv2.GaussianBlur(image, (3, 3), 0)
-    thresh, im_bw = cv2.threshold(blurred, 0.645, 255, cv2.THRESH_BINARY)
+    centers = []
+    blurred = cv2.GaussianBlur(image * 255, (3, 3), 0)
+    thresh, im_bw = cv2.threshold(blurred, 250, 255, cv2.THRESH_BINARY)
     cnts = cv2.findContours(
         im_bw.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
@@ -147,11 +147,18 @@ def center_of_shape(image, name):
         if M["m00"] > 0:
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-            out_centers.append((cY, cX, name))
-    return out_centers
+            centers.append((cY, cX, name))
+    return centers
 
 
-def plot_blobs(points, variance):
+def plot_blobs(points: typing.List, variance: float):
+    """
+    Function to plot blobs predicted and preprocessed by the network.
+
+    :param points:
+    :param variance:
+    :return:
+    """
     blob_map = np.ones((120, 160))
 
     for i in points:
@@ -164,3 +171,21 @@ def plot_blobs(points, variance):
 def compute_total_variation_loss_det(img, weight: float = 0.0001):
     tv_loss = total_variation_loss(img, weight)
     return tv_loss
+
+
+def det_image_processor_wandb(input_image, model_det_out, target):
+    fig = plt.figure()
+    plt.subplot(131)
+    new_image = cv2.resize(input_image.detach().permute(1, 2, 0).numpy(), (160, 120),
+                           interpolation=cv2.INTER_NEAREST)
+    plt.imshow(new_image)
+    plt.title('Input')
+    plt.subplot(132)
+    plt.imshow((model_det_out.detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
+    plt.title('Det out')
+    plt.subplot(133)
+    plt.imshow((target.detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
+    plt.title('Target')
+    plt.close()
+
+    return fig
