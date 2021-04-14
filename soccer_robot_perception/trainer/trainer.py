@@ -6,6 +6,7 @@ import typing
 import matplotlib.pyplot as plt
 from sys import maxsize
 import cv2
+import wandb
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -14,12 +15,9 @@ import time
 
 from soccer_robot_perception.evaluate.evaluate_model import evaluate_model
 
-from soccer_robot_perception.utils.segmentation_utils import (
-    total_variation_loss,
-    compute_total_variation_loss_seg, compute_total_variation_loss_det
-)
+from soccer_robot_perception.utils.segmentation_utils import compute_total_variation_loss_seg
+from soccer_robot_perception.utils.detection_utils import compute_total_variation_loss_det
 
-import wandb
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +44,8 @@ class Trainer:
         wandb_config,
         input_height: int,
         input_width: int,
+        seg_tvl_weight: float,
+        det_tvl_weight: float,
         lr_step_size=5,
         lr=1e-04,
         patience=5,
@@ -68,6 +68,8 @@ class Trainer:
         self.num_epochs = num_epochs
         self.seg_criterion = seg_criterion
         self.det_criterion = det_criterion
+        self.seg_tvl_weight = seg_tvl_weight
+        self.det_tvl_weight = det_tvl_weight
         self.optimizer = optimizer_class([
             {"params": self.net.encoder_block1.parameters(), "lr": 0.00001},
             {"params": self.net.encoder_block2.parameters(), "lr": 0.00001},
@@ -149,13 +151,13 @@ class Trainer:
                     input_image = det_data["image"]
                     self.optimizer.zero_grad()
                     det_out, seg_out = self.net(input_image)
-                    det_tv_loss = compute_total_variation_loss_det(det_out)
+                    det_tv_loss = compute_total_variation_loss_det(det_out, self.det_tvl_weight)
                     det_loss = det_tv_loss + self.det_criterion(det_out, det_data["det_target"])
                     seg_data = next(iter(self.train_seg_loader))
                     seg_data = self._sample_to_device(seg_data)
                     input_image = seg_data["image"]
                     det_out, seg_out = self.net(input_image)
-                    seg_tv_loss = compute_total_variation_loss_seg(seg_out)
+                    seg_tv_loss = compute_total_variation_loss_seg(seg_out, self.seg_tvl_weight)
                     seg_loss = (
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
                             + seg_tv_loss
@@ -258,13 +260,13 @@ class Trainer:
                     det_data = self._sample_to_device(det_data)
                     input_image = det_data["image"]
                     det_out, seg_out = self.net(input_image)
-                    det_tv_loss = compute_total_variation_loss_det(det_out)
+                    det_tv_loss = compute_total_variation_loss_det(det_out, self.det_tvl_weight)
                     det_loss = det_tv_loss + self.det_criterion(det_out, det_data["det_target"])
                     seg_data = next(iter(self.valid_seg_loader))
                     seg_data = self._sample_to_device(seg_data)
                     input_image = seg_data["image"]
                     det_out, seg_out = self.net(input_image)
-                    seg_tv_loss = compute_total_variation_loss_seg(seg_out)
+                    seg_tv_loss = compute_total_variation_loss_seg(seg_out, self.seg_tvl_weight)
                     seg_loss = (
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
                             + seg_tv_loss

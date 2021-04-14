@@ -4,10 +4,11 @@ import cv2
 import gin
 import torch
 import imutils
-
-import xml.etree.ElementTree as ET
-from soccer_robot_perception.utils.constants import CLASS_MAPPING_DETECTION
 from scipy.stats import multivariate_normal
+import xml.etree.ElementTree as ET
+
+from soccer_robot_perception.utils.constants import CLASS_MAPPING_DETECTION
+from soccer_robot_perception.utils.metrics import total_variation_loss
 
 
 def read_xml_file(xml_file: str):
@@ -159,3 +160,7 @@ def plot_blobs(points, variance):
         rv = multivariate_normal(mean=blob_point, cov=variance)
         blob_map = blob_map + rv.pdf(pos)
     return blob_map
+
+def compute_total_variation_loss_det(img, weight: float = 0.0001):
+    tv_loss = total_variation_loss(img, weight)
+    return tv_loss

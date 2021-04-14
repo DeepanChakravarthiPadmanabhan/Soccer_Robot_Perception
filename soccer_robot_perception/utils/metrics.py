@@ -193,3 +193,10 @@ def calculate_det_fdr(tp, fp, tn, fn):
     except ZeroDivisionError:
         fdr = 0
     return fdr
+
+def total_variation_loss(img: torch.tensor, weight: float = 0.0001):
+    bs, num_channels, height, width = img.shape
+    tv_h = ((img[:, :, 1:, :] - img[:, :, :-1, :]).pow(2)).sum()
+    tv_w = ((img[:, :, :, 1:] - img[:, :, :, :-1]).pow(2)).sum()
+    tv_loss = weight * (tv_h + tv_w) / (bs)
+    return tv_loss

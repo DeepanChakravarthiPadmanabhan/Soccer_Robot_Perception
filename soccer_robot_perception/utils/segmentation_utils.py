@@ -4,6 +4,7 @@ import gin
 import typing
 from collections import Counter
 import pandas as pd
+from soccer_robot_perception.utils.metrics import total_variation_loss
 
 
 def seg_label_preprocessor(label_mask):
@@ -106,18 +107,8 @@ def calculate_weight(
     return segmentation_class_weights
 
 
-def total_variation_loss(img: torch.tensor, weight: float = 0.001):
-    bs, num_channels, height, width = img.shape
-    tv_h = ((img[:, :, 1:, :] - img[:, :, :-1, :]).pow(2)).sum()
-    tv_w = ((img[:, :, :, 1:] - img[:, :, :, :-1]).pow(2)).sum()
-    tv_loss = weight * (tv_h + tv_w) / (bs)
+def compute_total_variation_loss_seg(img, weight: float = 0.0001):
+    tv_loss = total_variation_loss(img[:, :2, ::], weight)
     return tv_loss
 
 
-def compute_total_variation_loss_seg(img):
-    tv_loss = total_variation_loss(img[:, :2, ::])
-    return tv_loss
-
-def compute_total_variation_loss_det(img):
-    tv_loss = total_variation_loss(img)
-    return tv_loss
