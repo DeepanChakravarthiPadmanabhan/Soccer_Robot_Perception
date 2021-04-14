@@ -9,7 +9,7 @@ import torch
 import matplotlib.pyplot as plt
 
 from soccer_robot_perception.utils.metrics import (
-    calculate_metrics,
+    calculate_seg_metrics,
     get_confusion_matrix,
     calculate_iou,
     calculate_det_metrics,
@@ -276,7 +276,7 @@ def evaluate_model(
                     iou_lines.detach().item(),
                 ]
 
-                precision, recall, f1score, accuracy = calculate_metrics(
+                precision, recall, f1score, accuracy = calculate_seg_metrics(
                     labels_seg_flatten.detach().numpy(),
                     outputs_seg_flatten.detach().numpy(),
                     False,
@@ -291,7 +291,7 @@ def evaluate_model(
                     accuracy,
                 ]
 
-                precision, recall, f1score, accuracy = calculate_metrics(
+                precision, recall, f1score, accuracy = calculate_seg_metrics(
                     labels_seg_flatten.detach().numpy(),
                     outputs_seg_flatten.detach().numpy(),
                     False,
@@ -305,7 +305,7 @@ def evaluate_model(
                     f1score,
                     accuracy,
                 ]
-                image_precision, image_recall, image_f1score, _ = calculate_metrics(
+                image_precision, image_recall, image_f1score, _ = calculate_seg_metrics(
                     labels_seg_flatten.detach().numpy(),
                     outputs_seg_flatten.detach().numpy(),
                     True,

@@ -47,24 +47,10 @@ class NimbRoNet2(nn.Module):
             nn.ConvTranspose2d(512, 128, 2, 2, 0, output_padding=0),
         )
 
-        self.detection_head = nn.Sequential(
-            nn.ReLU(),
-            nn.BatchNorm2d(256),
-            LocationAwareConv2d(
-                gradient=True,
-                w=120,
-                h=160,
-                location_bias=location_bias,
-                in_channels=256,
-                out_channels=3,
-                kernel_size=1,
-            ),
-        )
+        self.relu_final = nn.ReLU()
+        self.bn_final = nn.BatchNorm2d(256)
 
-        self.segmentation_head = nn.Sequential(
-            nn.ReLU(),
-            nn.BatchNorm2d(256),
-            LocationAwareConv2d(
+        self.detection_head = LocationAwareConv2d(
                 gradient=True,
                 w=120,
                 h=160,
@@ -72,8 +58,17 @@ class NimbRoNet2(nn.Module):
                 in_channels=256,
                 out_channels=3,
                 kernel_size=1,
-            ),
-        )
+            )
+
+        self.segmentation_head = LocationAwareConv2d(
+                gradient=True,
+                w=120,
+                h=160,
+                location_bias=location_bias,
+                in_channels=256,
+                out_channels=3,
+                kernel_size=1,
+            )
 
         self.conv1x1_1 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=1)
         self.conv1x1_2 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=1)
@@ -100,7 +95,9 @@ class NimbRoNet2(nn.Module):
         out = self.decoder_block3(decoder_block3_input)
 
         decoder_block4_input = torch.cat((out, residual1), 1)
-        det_out = self.detection_head(decoder_block4_input)
-        seg_out = self.segmentation_head(decoder_block4_input)
+        head_inputs = self.relu_final(decoder_block4_input)
+        head_inputs = self.bn_final(head_inputs)
+        det_out = self.detection_head(head_inputs)
+        seg_out = self.segmentation_head(head_inputs)
 
         return det_out, seg_out

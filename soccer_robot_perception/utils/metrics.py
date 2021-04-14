@@ -6,7 +6,7 @@ from sklearn.metrics import confusion_matrix
 from scipy.spatial import distance
 
 
-def calculate_metrics(
+def calculate_seg_metrics(
     target: np.ndarray,
     output: np.ndarray,
     include_bg_class: bool = False,

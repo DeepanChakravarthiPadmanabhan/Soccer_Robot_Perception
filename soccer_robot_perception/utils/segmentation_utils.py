@@ -106,33 +106,18 @@ def calculate_weight(
     return segmentation_class_weights
 
 
-def total_variation_loss(img: torch.tensor, weight: int = 1):
+def total_variation_loss(img: torch.tensor, weight: float = 0.001):
     bs, num_channels, height, width = img.shape
     tv_h = ((img[:, :, 1:, :] - img[:, :, :-1, :]).pow(2)).sum()
     tv_w = ((img[:, :, :, 1:] - img[:, :, :, :-1]).pow(2)).sum()
-    tv_loss = weight * (tv_h + tv_w) / (bs * num_channels * height * width)
+    tv_loss = weight * (tv_h + tv_w) / (bs)
     return tv_loss
 
 
 def compute_total_variation_loss_seg(img):
-    img_bg = img[:, 0, :, :]
-    img_bg.unsqueeze_(1)
-    img_field = img[:, 1, :, :]
-    img_field.unsqueeze_(1)
-    tv_bg = total_variation_loss(img_bg)
-    tv_field = total_variation_loss(img_field)
-    tv_loss = tv_bg + tv_field
+    tv_loss = total_variation_loss(img[:, :2, ::])
     return tv_loss
 
 def compute_total_variation_loss_det(img):
-    img_1 = img[:, 0, :, :]
-    img_1.unsqueeze_(1)
-    img_2 = img[:, 1, :, :]
-    img_2.unsqueeze_(1)
-    img_3 = img[:, 2, :, :]
-    img_3.unsqueeze_(1)
-    tv_1 = total_variation_loss(img_1)
-    tv_2 = total_variation_loss(img_2)
-    tv_3 = total_variation_loss(img_3)
-    tv_loss = tv_1 + tv_2 + tv_3
+    tv_loss = total_variation_loss(img)
     return tv_loss
