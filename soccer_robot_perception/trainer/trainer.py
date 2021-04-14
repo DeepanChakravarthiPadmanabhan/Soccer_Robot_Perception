@@ -92,6 +92,8 @@ class Trainer:
         self.loss_scale = 1.0
         self.evaluate = evaluate
 
+        LOGGER.info('Running with config: %s', wandb_config)
+
         os.environ["WANDB_API_KEY"] = wandb_key
         os.environ["WANDB_NAME"] = run_name
         wandb.init(config=wandb_config, project='soccer-robot')

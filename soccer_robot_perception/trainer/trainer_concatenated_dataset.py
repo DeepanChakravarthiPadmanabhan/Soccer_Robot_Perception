@@ -14,18 +14,14 @@ import time
 
 from soccer_robot_perception.evaluate.evaluate_model import evaluate_model
 
-from soccer_robot_perception.utils.segmentation_utils import (
-    total_variation_loss,
-    compute_total_variation_loss,
-)
-
+from soccer_robot_perception.utils.segmentation_utils import compute_total_variation_loss_seg
+from soccer_robot_perception.utils.detection_utils import compute_total_variation_loss_det
 import wandb
 
 LOGGER = logging.getLogger(__name__)
 
 
-@gin.configurable
-class Trainer:
+class Trainer_old:
     """
     Trainer class. This class is used to define all the training parameters and processes for training the network.
     """
@@ -159,7 +155,7 @@ class Trainer:
                 if len(seg_target_collected) != 0:
                     seg_target_tensor = torch.cat(seg_target_collected, dim=0)
                     seg_out_tensor = torch.cat(seg_out_collected, dim=0)
-                    seg_tv_loss = compute_total_variation_loss(seg_out_tensor)
+                    seg_tv_loss = compute_total_variation_loss_seg(seg_out_tensor)
                     seg_loss = (
                         self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
                         + seg_tv_loss
@@ -291,7 +287,7 @@ class Trainer:
             if len(seg_target_collected) != 0:
                 seg_target_tensor = torch.cat(seg_target_collected, dim=0)
                 seg_out_tensor = torch.cat(seg_out_collected, dim=0)
-                seg_tv_loss = compute_total_variation_loss(seg_out_tensor)
+                seg_tv_loss = compute_total_variation_loss_seg(seg_out_tensor)
                 seg_loss = (
                     self.seg_criterion(seg_out_tensor, seg_target_tensor.long())
                     + seg_tv_loss
