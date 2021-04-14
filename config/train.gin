@@ -20,7 +20,7 @@ NUM_EPOCHS = 100
 OPTIMIZER = @torch.optim.Adam
 DET_BATCH_SIZE = 32
 SEG_BATCH_SIZE = 8
-LEARNING_RATE = 1e-04
+LEARNING_RATE = 1e-03
 STEP_SIZE = 5
 PATIENCE = 5
 WEIGHT_DECAY = 0
@@ -33,7 +33,8 @@ DET_TVL_WEIGHT = 1e-04
 
 WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'optimizer_class': %OPTIMIZER,
-'batch_size': %BATCH_SIZE,
+'det_batch_size': %DET_BATCH_SIZE,
+'seg_batch_size': %SEG_BATCH_SIZE,
 'learning_rate': %LEARNING_RATE,
 'step': %STEP_SIZE,
 'patience' : %PATIENCE,
