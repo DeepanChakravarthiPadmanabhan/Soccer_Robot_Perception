@@ -25,6 +25,7 @@ dependencies = [
     "black",
     "imutils",
     "wandb",
+    "gitpython",
 ]
 
 setup(
