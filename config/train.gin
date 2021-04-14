@@ -27,6 +27,8 @@ VALID_RATIO = 0.15
 TEST_RATIO = 0.15
 TRAIN_AND_EVALUATE = True
 RESNET_BB_FIXED = False
+SEG_TVL_WEIGHT = 0.0001
+DET_TVL_WEIGHT = 0.0001
 
 RUN_NAME = "soccer-robot"
 WANDB_KEY = "2aeb47c951aa8a38cedb69c0a8732f798c4bb052"
@@ -99,6 +101,8 @@ Trainer.weight_decay = %WEIGHT_DECAY
 Trainer.evaluate = %TRAIN_AND_EVALUATE
 Trainer.run_name = %RUN_NAME
 Trainer.wandb_key = %WANDB_KEY
+Trainer.seg_tvl_weight = %SEG_TVL_WEIGHT
+Trainer.det_tvl_weight = %DET_TVL_WEIGHT
 
 # Evaluation
 evaluate_model.net = @NimbRoNet2()
