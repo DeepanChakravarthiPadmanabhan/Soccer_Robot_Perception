@@ -81,6 +81,7 @@ class SegmentationDataset(Dataset):
         label = np.asarray(PIL.Image.open(self.all_labels[idx]))
 
         sample = {
+            "filename": self.all_images[idx],
             "dataset_class": "segmentation",
             "image": image,
             "seg_target": label,

@@ -140,7 +140,7 @@ def evaluate_model(
     for loader in test_loader_list:
         for data in loader:
             example += 1
-            LOGGER.info("Predicting on image: %d", example)
+            LOGGER.info("Predicting on image: %d at filepath: %s", example, data["filename"][0])
 
             input_image = data["image"]
             det_out, seg_out = net(input_image)
