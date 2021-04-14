@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 import matplotlib.pyplot as plt
+import git
 
 from soccer_robot_perception.utils.metrics import (
     calculate_seg_metrics,
@@ -82,6 +83,11 @@ def evaluate_model(
             "Saving images in the directory: %s",
             os.path.join(report_output_path, "output_images"),
         )
+
+
+    repo = git.Repo(search_parent_directories=True)
+    sha = repo.head.object.hexsha
+    LOGGER.info('Evaluating using the git sha: %s', sha)
 
     device = torch.device("cpu")
     state_test = torch.load(model_path, map_location=device)

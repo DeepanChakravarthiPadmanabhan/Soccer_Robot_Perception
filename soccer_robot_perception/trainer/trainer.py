@@ -12,6 +12,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import StepLR
 import time
+import git
 
 from soccer_robot_perception.evaluate.evaluate_model import evaluate_model
 
@@ -20,6 +21,8 @@ from soccer_robot_perception.utils.detection_utils import compute_total_variatio
 
 
 LOGGER = logging.getLogger(__name__)
+
+
 
 
 @gin.configurable
@@ -92,6 +95,10 @@ class Trainer:
         self.loss_scale = 1.0
         self.evaluate = evaluate
 
+        repo = git.Repo(search_parent_directories=True)
+        sha = repo.head.object.hexsha
+        LOGGER.info('Training using the git sha: %s', sha)
+
         LOGGER.info('Running with config: %s', wandb_config)
 
         os.environ["WANDB_API_KEY"] = wandb_key
@@ -115,7 +122,6 @@ class Trainer:
         return device_sample
 
     def train(self):
-
         LOGGER.info("Train Module")
         if not os.path.exists(os.path.dirname(self.model_output_path)):
             LOGGER.info(
