@@ -212,10 +212,14 @@ class Trainer:
                         )
                         running_loss = 0.0
 
-            fig1 = det_image_processor_wandb(det_data["image"][0], det_out[0], det_data["det_target"][0])
-            fig2 = det_image_processor_wandb(det_data["image"][1], det_out[1], det_data["det_target"][1])
-            fig3 = det_image_processor_wandb(det_data["image"][2], det_out[2], det_data["det_target"][2])
-            fig4 = det_image_processor_wandb(det_data["image"][3], det_out[3], det_data["det_target"][3])
+            fig1 = det_image_processor_wandb(det_data["image"][0].cpu().detach(), det_out[0].cpu().detach(),
+                                             det_data["det_target"][0].cpu().detach())
+            fig2 = det_image_processor_wandb(det_data["image"][1].cpu().detach(), det_out[1].cpu().detach(),
+                                             det_data["det_target"][1].cpu().detach())
+            fig3 = det_image_processor_wandb(det_data["image"][2].cpu().detach(), det_out[2].cpu().detach(),
+                                             det_data["det_target"][2].cpu().detach())
+            fig4 = det_image_processor_wandb(det_data["image"][3].cpu().detach(), det_out[3].cpu().detach(),
+                                             det_data["det_target"][3].cpu().detach())
 
             if self.scheduler:
                 self.scheduler.step()

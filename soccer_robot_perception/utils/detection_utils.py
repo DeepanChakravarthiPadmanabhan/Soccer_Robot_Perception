@@ -176,15 +176,15 @@ def compute_total_variation_loss_det(img, weight: float = 0.0001):
 def det_image_processor_wandb(input_image, model_det_out, target):
     fig = plt.figure()
     plt.subplot(131)
-    new_image = cv2.resize(input_image.detach().permute(1, 2, 0).numpy(), (160, 120),
+    new_image = cv2.resize(input_image.permute(1, 2, 0).numpy(), (160, 120),
                            interpolation=cv2.INTER_NEAREST)
     plt.imshow(new_image)
     plt.title('Input')
     plt.subplot(132)
-    plt.imshow((model_det_out.detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
+    plt.imshow((model_det_out.permute(1, 2, 0).numpy() * 255).astype(np.uint8))
     plt.title('Det out')
     plt.subplot(133)
-    plt.imshow((target.detach().permute(1, 2, 0).numpy() * 255).astype(np.uint8))
+    plt.imshow((target.permute(1, 2, 0).numpy() * 255).astype(np.uint8))
     plt.title('Target')
     plt.close()
 
