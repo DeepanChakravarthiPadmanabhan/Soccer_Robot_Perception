@@ -127,8 +127,8 @@ Trainer.wandb_key = %WANDB_KEY
 Trainer.seg_tvl_weight = %SEG_TVL_WEIGHT
 Trainer.det_tvl_weight = %DET_TVL_WEIGHT
 Trainer.wandb_config = %WANDB_CONFIG
-Trainer.train_from_checkpoint=True
-Trainer.trained_model_path='model/model.pth'
+Trainer.train_from_checkpoint = %TRAIN_FROM_CHECKPOINT
+Trainer.trained_model_path = %TRAINED_MODEL_PATH
 Trainer.loss_factor = %LOSS_FACTOR
 
 # Evaluation
