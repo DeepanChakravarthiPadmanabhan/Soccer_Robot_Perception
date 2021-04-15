@@ -125,7 +125,7 @@ def det_label_preprocessor(
     return label_mask_shrinked, blob_centers
 
 
-def center_of_shape(image: np.ndarray, name: int):
+def center_of_shape(image: np.ndarray, threshold, name: int):
     """
     To find centers of the contours in the input image.
 
@@ -137,12 +137,8 @@ def center_of_shape(image: np.ndarray, name: int):
     """
     centers = []
     image = (image * 255).astype(np.uint8)
-    # kernel = np.ones((5, 5), np.uint8)
-    # image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
-    # image = cv2.dilate(image, kernel, iterations=1)
-    # image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
-    blurred = cv2.GaussianBlur(image, (5, 5), 0)
-    thresh, im_bw = cv2.threshold(blurred, 60, 255, cv2.THRESH_BINARY)
+    blurred = cv2.GaussianBlur(image, (3, 3), 0)
+    thresh, im_bw = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY)
     cnts = cv2.findContours(
         im_bw.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )

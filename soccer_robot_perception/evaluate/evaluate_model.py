@@ -163,16 +163,16 @@ def evaluate_model(
                     0, dtype=torch.float32, requires_grad=True, device=device
                 )
 
-            ball_points = center_of_shape(det_out[0][0].detach().numpy(), 1)
-            robot_points = center_of_shape(det_out[0][1].detach().numpy(), 2)
-            goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 3)
+            ball_points = center_of_shape(det_out[0][0].detach().numpy(), 5, 1)
+            robot_points = center_of_shape(det_out[0][1].detach().numpy(), 250, 2)
+            goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 120, 3)
 
             blob_map = np.zeros(
                 (3, int(input_height / 4), int(input_width / 4))
             )
-            ball_map = plot_blobs(ball_points, 6)
-            robot_map = plot_blobs(robot_points, 12)
-            goalpost_map = plot_blobs(goalpost_points, 6)
+            ball_map = plot_blobs(ball_points, 4)
+            robot_map = plot_blobs(robot_points, 6)
+            goalpost_map = plot_blobs(goalpost_points, 4)
             blob_map[0] = ball_map
             blob_map[1] = robot_map
             blob_map[2] = goalpost_map
@@ -372,9 +372,31 @@ def evaluate_model(
                     report_output_path
                     + "/output_images/"
                     + str(example)
-                    + "_pred.jpg"
+                    + "_pred_local.jpg"
                 )
                 plt.close()
+
+                plt.figure(figsize=(14, 5))
+                new_image = input_image[0].permute(1, 2, 0).detach().numpy()
+                plt.subplot(131)
+                plt.imshow(cv2.resize(new_image, (160, 120), cv2.INTER_NEAREST))
+                plt.title("Input", fontsize=24)
+                plt.subplot(132)
+                plt.imshow((torch.argmax(seg_out, dim=1)[0].detach().numpy()), cmap="gray")
+                plt.title("Segmentation", fontsize=24)
+                plt.subplot(133)
+                plt.imshow((np.transpose(blob_map, (1, 2, 0)) * 255).astype(np.uint8))
+                plt.title("Detection", fontsize=24)
+                plt.tight_layout()
+                plt.savefig(
+                    report_output_path
+                    + "/output_images/"
+                    + str(example)
+                    + "_pred_final.jpg"
+                )
+
+                plt.close()
+
 
     df_iou.loc["mean"] = df_iou.mean()
     df_micro.loc["mean"] = df_micro.mean()
