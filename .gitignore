@@ -9,6 +9,7 @@ dist
 .ipynb*/
 .ipynb_checkpoints
 Untitled.ipynb
+*_old.py
 
 .idea/
 .coverage
@@ -39,3 +40,7 @@ config/*_local.gin
 model/
 predicted/
 preprocessed/
+report/
+wandb/
+
+play.py
