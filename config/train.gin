@@ -32,6 +32,7 @@ SEG_TVL_WEIGHT = 1e-06
 DET_TVL_WEIGHT = 1e-06
 TRAIN_FROM_CHECKPOINT = True
 TRAINED_MODEL_PATH = "/home/dpadma2s/cudavision_4/model.pth"
+LOSS_FACTOR = 0.9
 
 WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'optimizer_class': %OPTIMIZER,
@@ -49,6 +50,7 @@ WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'det_tvl_weight': %DET_TVL_WEIGHT,
 'train_from_checkpoint': %TRAIN_FROM_CHECKPOINT,
 'trained_model_path': %TRAINED_MODEL_PATH,
+'loss_factor': %LOSS_FACTOR,
 }
 
 RUN_NAME = "soccer-robot"
@@ -127,6 +129,7 @@ Trainer.det_tvl_weight = %DET_TVL_WEIGHT
 Trainer.wandb_config = %WANDB_CONFIG
 Trainer.train_from_checkpoint=True
 Trainer.trained_model_path='model/model.pth'
+Trainer.loss_factor = %LOSS_FACTOR
 
 # Evaluation
 evaluate_model.net = @NimbRoNet2()

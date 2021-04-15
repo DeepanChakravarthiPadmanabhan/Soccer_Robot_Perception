@@ -60,6 +60,7 @@ class Trainer:
         num_epochs=50,
         scheduler=None,
         summary_writer=SummaryWriter(),
+        loss_factor=0.7,
         evaluate=False,
         train_from_checkpoint=False,
         trained_model_path=None,
@@ -85,10 +86,10 @@ class Trainer:
         for netpart in sharer:
             self.shared_param |= set(netpart.parameters())
         self.optimizer = optimizer_class([
-            {"params": self.net.encoder_block1.parameters(), "lr": 0.00001},
-            {"params": self.net.encoder_block2.parameters(), "lr": 0.00001},
-            {"params": self.net.encoder_block3.parameters(), "lr": 0.00001},
-            {"params": self.net.encoder_block4.parameters(), "lr": 0.00001},
+            {"params": self.net.encoder_block1.parameters(), "lr": 1e-6},
+            {"params": self.net.encoder_block2.parameters(), "lr": 1e-6},
+            {"params": self.net.encoder_block3.parameters(), "lr": 1e-6},
+            {"params": self.net.encoder_block4.parameters(), "lr": 1e-6},
             {"params": self.net.decoder_block1.parameters(), "lr": self.lr},
             {"params": self.net.decoder_block2.parameters(), "lr": self.lr},
             {"params": self.net.decoder_block3.parameters(), "lr": self.lr},
@@ -106,6 +107,7 @@ class Trainer:
         self.evaluate = evaluate
         self.train_from_checkpoint = train_from_checkpoint
         self.trained_model_path = trained_model_path
+        self.loss_factor = loss_factor
 
         repo = git.Repo(search_parent_directories=True)
         sha = repo.head.object.hexsha
@@ -142,6 +144,7 @@ class Trainer:
             )
             os.makedirs(os.path.dirname(self.model_output_path))
         model_path = os.path.join(self.model_output_path, "model.pth")
+        model_hard_trained_path = os.path.join(self.model_output_path, "model_hard_trained.pth")
         best_model_path = model_path
         patience_count = self.patience
         det_train_len = len(self.train_det_loader.batch_sampler)
@@ -190,6 +193,8 @@ class Trainer:
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
                             + seg_tv_loss
                     )
+                    det_loss = self.loss_factor * det_loss
+                    seg_loss = (1 - self.loss_factor) * seg_loss
                     loss = det_loss + seg_loss
                     LOGGER.info(
                         "TRAINING - epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
@@ -293,7 +298,7 @@ class Trainer:
                     "Epoch %d Patience is 0. Early stopping triggered", epoch + 1
                 )
                 break
-
+        torch.save(self.net.state_dict(), model_hard_trained_path)
         toc = timeit.default_timer()
         LOGGER.info("Finished training in %f s", toc - tic)
 
@@ -328,7 +333,9 @@ class Trainer:
                             self.seg_criterion(seg_out, seg_data["seg_target"].long())
                             + seg_tv_loss
                     )
-                    loss = seg_loss + det_loss
+                    det_loss = self.loss_factor * det_loss
+                    seg_loss = (1 - self.loss_factor) * seg_loss
+                    loss = det_loss + seg_loss
                     LOGGER.info(
                         "VALIDATION - epoch: %d, step: %d, loss: %f, seg_loss: %f, det_loss: %f ",
                         self.current_epoch,

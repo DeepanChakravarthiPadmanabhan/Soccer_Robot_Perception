@@ -22,7 +22,6 @@ class NimbRoNet2(nn.Module):
                 param.requires_grad = False
 
         location_bias = torch.nn.Parameter(torch.zeros(120, 160, 3))
-        location_encoder = torch.autograd.Variable(torch.ones(120, 160, 3))
 
         # TODO: Find how to apply weights for the new layers
         self.encoder_block1 = nn.Sequential(*list(res18_model.children())[0:5])
