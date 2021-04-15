@@ -61,6 +61,8 @@ class Trainer:
         scheduler=None,
         summary_writer=SummaryWriter(),
         evaluate=False,
+        train_from_checkpoint=False,
+        trained_model_path=None,
         run_name="soccer-robot",
     ):
         self.net = net
@@ -102,6 +104,8 @@ class Trainer:
         self.input_width = input_width
         self.loss_scale = 1.0
         self.evaluate = evaluate
+        self.train_from_checkpoint = train_from_checkpoint
+        self.trained_model_path = trained_model_path
 
         repo = git.Repo(search_parent_directories=True)
         sha = repo.head.object.hexsha
@@ -147,6 +151,12 @@ class Trainer:
         tic = timeit.default_timer()
         best_validation_loss = maxsize
         wandb.watch(self.net, log='all')
+
+        if self.train_from_checkpoint:
+            assert self.trained_model_path, "Provide model path for training from checkpoint"
+            LOGGER.info("Loading weights into model using the model file: %s", self.trained_model_path)
+            state_test = torch.load(self.trained_model_path, map_location=self.device)
+            self.net.load_state_dict(state_test)
 
         for epoch in range(self.num_epochs):
             start = time.time()

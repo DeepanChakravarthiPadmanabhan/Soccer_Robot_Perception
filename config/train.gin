@@ -19,7 +19,7 @@ NUM_DET_CLASSES = 3
 NUM_EPOCHS = 100
 OPTIMIZER = @torch.optim.Adam
 DET_BATCH_SIZE = 32
-SEG_BATCH_SIZE = 8
+SEG_BATCH_SIZE = 4
 LEARNING_RATE = 1e-03
 STEP_SIZE = 100
 PATIENCE = 5
@@ -28,8 +28,10 @@ VALID_RATIO = 0.15
 TEST_RATIO = 0.15
 TRAIN_AND_EVALUATE = True
 RESNET_BB_FIXED = False
-SEG_TVL_WEIGHT = 2e-06
-DET_TVL_WEIGHT = 2e-06
+SEG_TVL_WEIGHT = 1e-06
+DET_TVL_WEIGHT = 1e-06
+TRAIN_FROM_CHECKPOINT = True
+TRAINED_MODEL_PATH = "/home/dpadma2s/cudavision_4/model.pth"
 
 WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'optimizer_class': %OPTIMIZER,
@@ -42,8 +44,11 @@ WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'validation_ratio': %VALID_RATIO,
 'test_ratio': %TEST_RATIO,
 'train_and_evaluate': %TRAIN_AND_EVALUATE,
+'resnet_bb_fixed': %RESNET_BB_FIXED,
 'seg_tvl_weight': %SEG_TVL_WEIGHT,
 'det_tvl_weight': %DET_TVL_WEIGHT,
+'train_from_checkpoint': %TRAIN_FROM_CHECKPOINT,
+'trained_model_path': %TRAINED_MODEL_PATH,
 }
 
 RUN_NAME = "soccer-robot"
@@ -120,6 +125,8 @@ Trainer.wandb_key = %WANDB_KEY
 Trainer.seg_tvl_weight = %SEG_TVL_WEIGHT
 Trainer.det_tvl_weight = %DET_TVL_WEIGHT
 Trainer.wandb_config = %WANDB_CONFIG
+Trainer.train_from_checkpoint=True
+Trainer.trained_model_path='model/model.pth'
 
 # Evaluation
 evaluate_model.net = @NimbRoNet2()
