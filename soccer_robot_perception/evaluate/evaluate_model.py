@@ -163,9 +163,9 @@ def evaluate_model(
                     0, dtype=torch.float32, requires_grad=True, device=device
                 )
 
-            ball_points = center_of_shape(det_out[0][0].detach().numpy(), 5, 1)
-            robot_points = center_of_shape(det_out[0][1].detach().numpy(), 250, 2)
-            goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 120, 3)
+            ball_points = center_of_shape(det_out[0][0].detach().numpy(), 230.5, 1)
+            robot_points = center_of_shape(det_out[0][1].detach().numpy(), 251.5, 2)
+            goalpost_points = center_of_shape(det_out[0][2].detach().numpy(), 252.5, 3)
 
             blob_map = np.zeros(
                 (3, int(input_height / 4), int(input_width / 4))
