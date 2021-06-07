@@ -54,13 +54,15 @@ def det_label_preprocessor(
     ball_map = np.ones((int(input_height / scale), int(input_width / scale)))
     goalpost_map = np.ones((int(input_height / scale), int(input_width / scale)))
     blob_centers = []
+    classmap_to_normalize = [False, False, False]
     for box, name in zip(bb, class_name):
 
         box = [x / scale for x in box]
         if name == CLASS_MAPPING_DETECTION["ball"]:
+            classmap_to_normalize[0] = True
             ball_heatmap = np.dstack(
                 np.mgrid[
-                    0 : int(input_height / scale) : 1, 0 : int(input_width / scale) : 1
+                    0: int(input_height / scale): 1, 0: int(input_width / scale): 1
                 ]
             )
             point_x = (box[0] + box[2]) / 2
@@ -69,13 +71,14 @@ def det_label_preprocessor(
             start_y = int(point_y)
 
             rv = multivariate_normal(mean=[start_y, start_x], cov=small_variance)
-            ball_map = ball_map + rv.pdf(ball_heatmap)
+            ball_map -= small_variance * rv.pdf(ball_heatmap).reshape(int(input_height / scale), int(input_width / scale))
             blob_centers.append((start_y, start_x, name))
 
         elif name == CLASS_MAPPING_DETECTION["robot"]:
+            classmap_to_normalize[1] = True
             robot_heatmap = np.dstack(
                 np.mgrid[
-                    0 : int(input_height / scale) : 1, 0 : int(input_width / scale) : 1
+                    0: int(input_height / scale): 1, 0: int(input_width / scale): 1
                 ]
             )
             point_x = (box[0] + box[2]) / 2
@@ -84,13 +87,14 @@ def det_label_preprocessor(
             start_y = int(point_y)
 
             rv = multivariate_normal(mean=[start_y, start_x], cov=large_variance)
-            robot_map = robot_map + rv.pdf(robot_heatmap)
+            robot_map -= large_variance * rv.pdf(robot_heatmap).reshape(int(input_height / scale), int(input_width / scale))
             blob_centers.append((start_y, start_x, name))
 
         elif name == CLASS_MAPPING_DETECTION["goalpost"]:
+            classmap_to_normalize[2] = True
             goalpost_heatmap = np.dstack(
                 np.mgrid[
-                    0 : int(input_height / scale) : 1, 0 : int(input_width / scale) : 1
+                    0: int(input_height / scale): 1, 0: int(input_width / scale): 1
                 ]
             )
             point_x = box[0]
@@ -98,12 +102,12 @@ def det_label_preprocessor(
             start_x = int(point_x)
             start_y = int(point_y)
             rv = multivariate_normal(mean=[start_y, start_x], cov=small_variance)
-            goalpost_map = goalpost_map + rv.pdf(goalpost_heatmap)
+            goalpost_map -= small_variance * rv.pdf(goalpost_heatmap).reshape(int(input_height / scale), int(input_width / scale))
             blob_centers.append((start_y, start_x, name))
 
             goalpost_heatmap = np.dstack(
                 np.mgrid[
-                    0 : int(input_height / scale) : 1, 0 : int(input_width / scale) : 1
+                    0: int(input_height / scale): 1, 0: int(input_width / scale): 1
                 ]
             )
             point_x = box[2]
@@ -111,18 +115,27 @@ def det_label_preprocessor(
             start_x = int(point_x)
             start_y = int(point_y)
             rv = multivariate_normal(mean=[start_y, start_x], cov=small_variance)
-            goalpost_map = goalpost_map + rv.pdf(goalpost_heatmap)
+            goalpost_map -= small_variance * rv.pdf(goalpost_heatmap).reshape(int(input_height / scale), int(input_width / scale))
             blob_centers.append((start_y, start_x, name))
 
     if visualize_label_masks:
         plt.imshow(label_mask_shrinked)
         plt.show()
 
-    label_mask_shrinked[0] = ball_map
-    label_mask_shrinked[1] = robot_map
-    label_mask_shrinked[2] = goalpost_map
+    label_mask_shrinked[0] = normalize_heat_map(ball_map, classmap_to_normalize[0])
+    label_mask_shrinked[1] = normalize_heat_map(robot_map, classmap_to_normalize[1])
+    label_mask_shrinked[2] = normalize_heat_map(goalpost_map, classmap_to_normalize[2])
     label_mask_shrinked = torch.tensor(label_mask_shrinked, dtype=torch.float)
     return label_mask_shrinked, blob_centers
+
+
+def normalize_heat_map(heat_map, normalizer_flag=False):
+    n = heat_map - np.amin(heat_map)
+    d = np.amax(heat_map) - np.amin(heat_map)
+    if normalizer_flag:
+        return n / d
+    else:
+        return heat_map
 
 
 def center_of_shape(image: np.ndarray, threshold, name: int):

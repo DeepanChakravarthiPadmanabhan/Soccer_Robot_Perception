@@ -12,8 +12,8 @@ else:
 dependencies = [
     "click>=7.0",
     "numpy>=1.17.0,<2.0",
-    "torch",
-    "torchvision",
+    "torch==1.7.1",
+    "torchvision==0.8.2",
     "opencv-python>=4.1.1.26,<5.0",
     "tensorboard==2.3.0",
     "scikit-learn>=0.21.0,<1.0",
@@ -25,6 +25,7 @@ dependencies = [
     "black",
     "imutils",
     "wandb",
+    "pandas"
 ]
 
 setup(
@@ -50,5 +51,5 @@ setup(
             ],
         )
     ],
-    python_requires=">=3.7,<3.9",
+    python_requires=">=3.6,<3.9",
 )
