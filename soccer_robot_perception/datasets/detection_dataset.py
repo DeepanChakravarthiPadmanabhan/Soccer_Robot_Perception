@@ -20,6 +20,7 @@ class DetectionDataset(Dataset):
         self,
         root_dir: str,
         transform: typing.Dict,
+        detection_sample_count: int,
     ):
         """
 
@@ -30,11 +31,12 @@ class DetectionDataset(Dataset):
         self.root_dir = root_dir
         LOGGER.info("Root directory read: %s", root_dir)
         self.transform = transform
-        self.all_images, self.all_labels = self._get_images_labels_lists(self.root_dir)
+        self.detection_sample_count = detection_sample_count
+        self.all_images, self.all_labels = self._get_images_labels_lists(self.root_dir, self.detection_sample_count)
         LOGGER.info("Number of samples in detection dataset: %d", len(self.all_images))
 
     @staticmethod
-    def _get_images_labels_lists(root_dir):
+    def _get_images_labels_lists(root_dir, detection_sample_count):
         """
 
         :return:
@@ -65,6 +67,8 @@ class DetectionDataset(Dataset):
                         )
                     else:
                         image_list.pop()
+        image_list = image_list[:detection_sample_count]
+        label_list = image_list[:detection_sample_count]
         return image_list, label_list
 
     def __len__(self):

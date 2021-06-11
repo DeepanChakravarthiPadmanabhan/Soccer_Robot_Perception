@@ -97,7 +97,7 @@ class Trainer:
             {"params": self.net.conv1x1_1.parameters(), "lr": self.lr},
             {"params": self.net.conv1x1_2.parameters(), "lr": self.lr},
             {"params": self.net.conv1x1_3.parameters(), "lr": self.lr},
-        ])
+        ], 1e-3)
         self.scheduler = StepLR(self.optimizer, step_size=lr_step_size, gamma=0.1)
         self.tensorboard_writer = summary_writer
         self.device = device
@@ -274,8 +274,8 @@ class Trainer:
                 "valid_det_loss": av_valid_det_loss}, step=epoch + 1)
             LOGGER.info("Current epoch completed in %f s", time.time() - start)
 
-            if av_valid_loss < best_validation_loss and model_path and best_model_path:
-            # if True:
+            # if av_valid_loss < best_validation_loss and model_path and best_model_path:
+            if True:
                 best_validation_loss = av_valid_loss
                 best_model_path = model_path
                 LOGGER.info(
@@ -351,5 +351,5 @@ class Trainer:
         av_valid_loss = av_loss / seg_valid_len
         av_valid_seg_loss = av_seg_loss / seg_valid_len
         av_valid_det_loss = av_det_loss / seg_valid_len
-        # av_valid_loss = 0
+        av_valid_loss = 0
         return av_valid_loss, av_valid_seg_loss, av_valid_det_loss

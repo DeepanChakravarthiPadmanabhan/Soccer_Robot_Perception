@@ -16,13 +16,13 @@ NUM_SEG_CLASSES = 3
 NUM_DET_CLASSES = 3
 
 # TRAINER DETAILS FOR WANDB CONFIG AND TRAINER CONFIG
-NUM_EPOCHS = 100
+NUM_EPOCHS = 300
 OPTIMIZER = @torch.optim.Adam
 DET_BATCH_SIZE = 32
 SEG_BATCH_SIZE = 4
 LEARNING_RATE = 1e-03
 STEP_SIZE = 100
-PATIENCE = 50
+PATIENCE = 300
 WEIGHT_DECAY = 0
 VALID_RATIO = 0.15
 TEST_RATIO = 0.15
@@ -33,6 +33,7 @@ DET_TVL_WEIGHT = 1e-06
 TRAIN_FROM_CHECKPOINT = False
 TRAINED_MODEL_PATH = "/home/dpadma2s/cudavision_4/model.pth"
 LOSS_FACTOR = 0.9
+DETECTION_SAMPLE_COUNT = 3000
 
 WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'optimizer_class': %OPTIMIZER,
@@ -51,6 +52,7 @@ WANDB_CONFIG = {'num_epochs':%NUM_EPOCHS,
 'train_from_checkpoint': %TRAIN_FROM_CHECKPOINT,
 'trained_model_path': %TRAINED_MODEL_PATH,
 'loss_factor': %LOSS_FACTOR,
+'detection_sample_count': %DETECTION_SAMPLE_COUNT,
 }
 
 RUN_NAME = "soccer-robot"
@@ -65,6 +67,7 @@ configure_transforms.config = %TRANSFORM_CONFIGURATION
 # Dataset
 DetectionDataset.root_dir = '/scratch/dpadma2s/cuda_data/data/blob/'
 DetectionDataset.transform = @configure_transforms()
+DetectionDataset.detection_sample_count = %DETECTION_SAMPLE_COUNT
 
 SegmentationDataset.root_dir = '/scratch/dpadma2s/cuda_data/data/segmentation/'
 SegmentationDataset.transform = @configure_transforms()
