@@ -68,7 +68,7 @@ class DetectionDataset(Dataset):
                     else:
                         image_list.pop()
         image_list = image_list[:detection_sample_count]
-        label_list = image_list[:detection_sample_count]
+        label_list = label_list[:detection_sample_count]
         return image_list, label_list
 
     def __len__(self):
